@@ -1,56 +1,61 @@
 export type Rating = "again" | "hard" | "good" | "easy";
 
-export type CardState = {
-  interval: number; // days
-  ease: number;
-  due: number; // epoch ms
-  reps: number;
-};
+export interface CardProgress {
+  interval: number; // days until next review
+  ease: number; // ease factor, higher = intervals grow faster
+  due: number; // epoch ms when this card is next due
+  reps: number; // consecutive successful reviews
+}
+
+type ProgressMap = Record<string, CardProgress>;
 
 const STORAGE_KEY = "sap-c02-srs-state";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_EASE = 2.5;
+const MIN_EASE = 1.3;
 
-export function loadState(): Record<string, CardState> {
+export function loadProgress(): ProgressMap {
   if (typeof window === "undefined") return {};
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    return raw ? (JSON.parse(raw) as ProgressMap) : {};
   } catch {
     return {};
   }
 }
 
-export function saveState(state: Record<string, CardState>) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+export function saveProgress(progress: ProgressMap): void {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 }
 
-const DAY = 24 * 60 * 60 * 1000;
+export function isDue(progress: CardProgress | undefined, now = Date.now()): boolean {
+  return !progress || progress.due <= now;
+}
 
-export function nextState(prev: CardState | undefined, rating: Rating): CardState {
-  const ease = prev?.ease ?? 2.5;
-  const reps = prev?.reps ?? 0;
+export function schedule(progress: CardProgress | undefined, rating: Rating): CardProgress {
+  const ease = progress?.ease ?? DEFAULT_EASE;
 
   if (rating === "again") {
-    return { interval: 0, ease: Math.max(1.3, ease - 0.2), due: Date.now(), reps: 0 };
+    return { interval: 0, ease: Math.max(MIN_EASE, ease - 0.2), due: Date.now(), reps: 0 };
   }
 
-  let interval: number;
-  if (reps === 0) {
-    interval = rating === "easy" ? 3 : 1;
-  } else if (reps === 1) {
-    interval = rating === "easy" ? 6 : rating === "hard" ? 2 : 4;
-  } else {
-    const prevInterval = prev?.interval ?? 1;
-    const factor = rating === "hard" ? 1.2 : rating === "easy" ? ease * 1.3 : ease;
-    interval = Math.round(prevInterval * factor);
-  }
-
-  const newEase =
-    rating === "hard" ? Math.max(1.3, ease - 0.15) : rating === "easy" ? ease + 0.15 : ease;
+  const reps = progress?.reps ?? 0;
+  const interval = nextInterval(reps, progress?.interval ?? 1, ease, rating);
+  const nextEase =
+    rating === "hard" ? Math.max(MIN_EASE, ease - 0.15) : rating === "easy" ? ease + 0.15 : ease;
 
   return {
     interval,
-    ease: newEase,
-    due: Date.now() + interval * DAY,
+    ease: nextEase,
+    due: Date.now() + interval * DAY_MS,
     reps: reps + 1,
   };
+}
+
+function nextInterval(reps: number, prevInterval: number, ease: number, rating: Rating): number {
+  if (reps === 0) return rating === "easy" ? 3 : 1;
+  if (reps === 1) return rating === "easy" ? 6 : rating === "hard" ? 2 : 4;
+
+  const factor = rating === "hard" ? 1.2 : rating === "easy" ? ease * 1.3 : ease;
+  return Math.round(prevInterval * factor);
 }
