@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useMcqQueue } from "@/lib/useMcqQueue";
+import { isTypingTarget } from "@/lib/isTypingTarget";
 
 const OPTION_KEYS = ["1", "2", "3", "4"];
 
@@ -28,6 +29,7 @@ export default function McqPage() {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey || !question) return;
+      if (isTypingTarget(event)) return;
 
       if (!isAnswered) {
         const index = OPTION_KEYS.indexOf(event.key);

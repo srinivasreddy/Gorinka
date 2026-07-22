@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Flashcard } from "@/components/Flashcard";
+import { CardSearch } from "@/components/CardSearch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStudyQueue } from "@/lib/useStudyQueue";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useSwipeGesture } from "@/lib/useSwipeGesture";
+import { useCardSearch } from "@/lib/useCardSearch";
 import type { Rating } from "@/lib/srs";
 
 export default function FlashcardsPage() {
@@ -22,6 +24,9 @@ export default function FlashcardsPage() {
     goForward,
   } = useStudyQueue();
   const [revealed, setRevealed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchResults = useCardSearch(searchQuery);
+  const isSearching = searchQuery.trim().length > 0;
 
   function handleRate(rating: Rating) {
     rate(rating);
@@ -64,12 +69,16 @@ export default function FlashcardsPage() {
     <div className="flex flex-1 flex-col items-center bg-muted/30 px-4 py-10 font-sans">
       <div className="w-full max-w-xl">
         <h1 className="mb-1 text-xl font-semibold text-foreground">SAP-C02 Flashcards</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="mb-4 text-sm text-muted-foreground">
           {currentCard ? `${dueCount} due · ${studiedCount} studied` : `${studiedCount} studied`}
           {canGoBack && <span className="opacity-60"> · ← previous card</span>}
         </p>
 
-        {currentCard ? (
+        <div className="mb-6">
+          <CardSearch query={searchQuery} onQueryChange={setSearchQuery} results={searchResults} />
+        </div>
+
+        {isSearching ? null : currentCard ? (
           <div {...swipeHandlers}>
             <Flashcard
               front={currentCard.front}

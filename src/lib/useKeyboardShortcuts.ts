@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isTypingTarget } from "@/lib/isTypingTarget";
 import type { Rating } from "@/lib/srs";
 
 const RATING_KEYS: Record<string, Rating> = {
@@ -34,6 +35,7 @@ export function useKeyboardShortcuts({
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event)) return;
 
       if (event.key === "ArrowLeft") {
         if (canGoBack) {

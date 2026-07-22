@@ -2,17 +2,10 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import cardsData from "@/data/cards.json";
+import { cards } from "@/lib/cards";
 import { isDue, loadProgress, saveProgress, schedule, type CardProgress, type Rating } from "@/lib/srs";
 
-export interface Card {
-  front: string;
-  back: string;
-}
-
-const cards: Card[] = (cardsData as Card[]).filter(
-  (card) => card.front.replace(/<[^>]*>/g, "").trim().length > 0
-);
+export type { Card } from "@/lib/cards";
 
 const STUDY_QUEUE_KEY = ["study-queue"] as const;
 
