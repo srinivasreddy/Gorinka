@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import cardsData from "@/data/cards.json";
 import { isDue, loadProgress, saveProgress, schedule, type CardProgress, type Rating } from "@/lib/srs";
 
@@ -22,32 +22,40 @@ function shuffled(indices: number[]): number[] {
   return result;
 }
 
+interface LoadedState {
+  progress: Record<string, CardProgress>;
+  queue: number[];
+}
+
 export function useStudyQueue() {
-  const [progress, setProgress] = useState<Record<string, CardProgress>>({});
-  const [queue, setQueue] = useState<number[]>([]);
+  const [loaded, setLoaded] = useState<LoadedState | null>(null);
   const [position, setPosition] = useState(0);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const loaded = loadProgress();
-    setProgress(loaded);
+    const progress = loadProgress();
     const dueIndices = cards
       .map((_, i) => i)
-      .filter((i) => isDue(loaded[cards[i].front]));
-    setQueue(shuffled(dueIndices));
-    setReady(true);
+      .filter((i) => isDue(progress[cards[i].front]));
+    // localStorage doesn't exist during SSR, so this can't be read during
+    // initial render without a hydration mismatch — an effect is required.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoaded({ progress, queue: shuffled(dueIndices) });
   }, []);
+
+  const ready = loaded !== null;
+  const progress = loaded?.progress ?? {};
+  const queue = loaded?.queue ?? [];
 
   const currentCard = queue[position] !== undefined ? cards[queue[position]] : null;
   const dueCount = queue.length - position;
-  const studiedCount = useMemo(() => Object.keys(progress).length, [progress]);
+  const studiedCount = Object.keys(progress).length;
 
   function rate(rating: Rating) {
-    if (!currentCard) return;
+    if (!currentCard || !loaded) return;
     const key = currentCard.front;
-    const updated = { ...progress, [key]: schedule(progress[key], rating) };
-    setProgress(updated);
-    saveProgress(updated);
+    const updatedProgress = { ...progress, [key]: schedule(progress[key], rating) };
+    saveProgress(updatedProgress);
+    setLoaded({ ...loaded, progress: updatedProgress });
     setPosition((p) => p + 1);
   }
 
