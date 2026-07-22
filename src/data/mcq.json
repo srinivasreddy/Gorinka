@@ -30,5 +30,197 @@
         "D": "Site-to-Site VPN is designed for connecting to on-premises networks, not VPC-to-VPC connectivity within AWS. It adds unnecessary encryption/tunnel overhead and per-connection management, with no advantage over PrivateLink or Transit Gateway for intra-AWS traffic."
       }
     }
+  },
+  {
+    "id": "vpc-subnet-sharing-ram",
+    "domain": "Networking & Connectivity",
+    "scenario": "A central platform team manages networking for a large enterprise with 40 application teams, each operating its own AWS account under the same AWS Organization. Requirements:\n\n- All application teams should deploy resources into a shared pool of subnets managed centrally, to avoid IP address exhaustion and inconsistent CIDR planning across 40 separate VPCs.\n- Application teams must be able to launch EC2 instances, RDS databases, and other resources into these shared subnets from their own accounts.\n- Application teams must NOT be able to modify the shared VPC's route tables, security group defaults, or subnet configuration — only the central platform team should control those.\n- The solution should minimize the number of VPCs, cross-VPC connections, and peering relationships the platform team has to manage.\n\nWhich approach satisfies these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a VPC per application team, and use AWS Transit Gateway to connect all 40 VPCs together with a shared services VPC containing common resources."
+      },
+      {
+        "key": "B",
+        "text": "Use VPC sharing (via AWS Resource Access Manager) to share subnets from a single central VPC owned by the platform team's account with each of the 40 application team accounts as participants, allowing each team to launch resources into the shared subnets while the platform team retains ownership of the VPC, route tables, and NACLs."
+      },
+      {
+        "key": "C",
+        "text": "Create a VPC per application team and use VPC peering between each application team's VPC and a shared services VPC to centralize IP address management."
+      },
+      {
+        "key": "D",
+        "text": "Grant each application team's IAM role a resource-based policy to create resources directly inside the platform team's VPC, and rely on IAM policies alone to prevent route table modification."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "VPC sharing (RAM-shared subnets) is the exact AWS feature for this scenario: a single owner VPC's subnets are shared with participant accounts, which can launch resources (EC2, RDS, etc.) into those subnets using their own account's billing and resource ownership — but participants can never modify the VPC's route tables, NACLs, security group defaults, gateways, or peering/attachment configuration, since only the owning account controls those. This collapses 40 potential VPCs into one, directly minimizing CIDR planning overhead and eliminating the need for any peering or Transit Gateway attachments between teams.",
+      "incorrect": {
+        "A": "40 separate VPCs plus a Transit Gateway still means 40 CIDR ranges to plan and 40 attachments to manage — it doesn't minimize VPC count or avoid CIDR exhaustion planning. Each team also still fully owns and can modify its own VPC's route tables, which fails the \"must not modify\" requirement.",
+        "C": "Full mesh-style peering to a shared services VPC still requires 40 separate VPCs and up to 40 peering connections, directly contradicting the \"minimize VPCs and connections\" requirement, and again each team retains full control over its own VPC.",
+        "D": "IAM resource-based policies aren't how cross-account subnet access is granted in AWS — VPC sharing via RAM is the actual mechanism. Relying on IAM policies alone to prevent infrastructure changes is weaker and not how AWS implements this boundary."
+      }
+    }
+  },
+  {
+    "id": "tgw-multi-region-segmentation",
+    "domain": "Networking & Connectivity",
+    "scenario": "A global company has 10 VPCs in us-east-1 and 8 VPCs in eu-west-1, plus an on-premises data center connected via Direct Connect to us-east-1. Requirements:\n\n- All VPCs within each Region must be able to communicate with each other and with the on-premises network.\n- Three specific VPCs in us-east-1 hold PCI workloads (the \"Sensitive\" segment) and must NOT be reachable from any eu-west-1 VPC, even though all VPCs will attach to Transit Gateways.\n- Cross-Region traffic between the two Regions' Transit Gateways must never traverse the public internet.\n\nWhich combination of actions meets these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a single Transit Gateway in us-east-1, attach the eu-west-1 VPCs to it via VPC peering, and use one Transit Gateway route table for all attachments."
+      },
+      {
+        "key": "B",
+        "text": "Create a Transit Gateway in each Region, connect them with Transit Gateway peering, and use multiple Transit Gateway route tables per Region — associating the Sensitive VPC attachments with a dedicated route table that does not have routes propagated to or from the eu-west-1 attachments."
+      },
+      {
+        "key": "C",
+        "text": "Create a Transit Gateway in each Region, connect them with a Site-to-Site VPN over the internet, and rely on Security Groups alone in the Sensitive VPCs to block traffic from eu-west-1."
+      },
+      {
+        "key": "D",
+        "text": "Create separate VPC peering connections between every pair of VPCs across both Regions and use NACLs to block traffic from eu-west-1 into the Sensitive VPCs."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Transit Gateway peering connects two regional Transit Gateways privately over the AWS backbone, satisfying \"never traverse the public internet.\" Network segmentation is achieved with multiple Transit Gateway route tables: associating the Sensitive VPCs' attachments with a route table that doesn't propagate routes to/from the eu-west-1 attachments isolates them at the routing layer, while all other same-Region VPCs and the on-premises network continue to communicate normally through their own associated/propagated route tables. This is the standard Transit Gateway network-segmentation pattern.",
+      "incorrect": {
+        "A": "Transit Gateway doesn't span Regions this way — cross-Region connectivity requires Transit Gateway peering between two regional Transit Gateways, not plain VPC peering directly to a Transit Gateway. A single shared route table also provides no segmentation at all.",
+        "C": "A Site-to-Site VPN over the internet directly violates the \"must never traverse the public internet\" requirement. Security Groups alone also don't provide network-level route isolation — they filter traffic to/from resources that are still routable, which is a weaker and less reliable segmentation boundary than route table isolation.",
+        "D": "A full mesh of VPC peering connections across 18 VPCs doesn't scale (no transitive routing, and a rapidly growing number of pairwise connections to manage), and NACLs are a much higher-maintenance, per-subnet mechanism compared to centralized route-table-based segmentation at the Transit Gateway."
+      }
+    }
+  },
+  {
+    "id": "dx-resiliency-toolkit-vpn-backup",
+    "domain": "Networking & Connectivity",
+    "scenario": "A financial services company has a single AWS Direct Connect connection from its data center to a Direct Connect location, terminating in a private VIF on a Virtual Private Gateway. Requirements:\n\n- Loss of any single Direct Connect location or device must not cause a full connectivity outage.\n- The design should follow an AWS-documented resiliency model that eliminates single points of failure in the Direct Connect path.\n- If all Direct Connect paths fail simultaneously, traffic must automatically fail over to an encrypted path over the internet, with no manual intervention required.\n\nWhich combination of steps satisfies these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Provision a second Direct Connect connection at the same Direct Connect location, using the same device and cross-connect, and configure equal BGP priority on both."
+      },
+      {
+        "key": "B",
+        "text": "Following the AWS Direct Connect Resiliency Toolkit, provision two Direct Connect connections at two different Direct Connect locations terminating on different devices, and configure a Site-to-Site VPN as a backup path with a less-preferred BGP path (e.g. longer AS_PATH) than the Direct Connect routes."
+      },
+      {
+        "key": "C",
+        "text": "Use a single Direct Connect connection with a Link Aggregation Group (LAG) to increase throughput, and rely on Direct Connect's built-in automatic failover to the internet."
+      },
+      {
+        "key": "D",
+        "text": "Provision two Direct Connect connections at two different Direct Connect locations behind a Direct Connect Gateway and Transit Gateway, and omit a VPN backup since the Direct Connect Gateway is redundant by default."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "The Direct Connect Resiliency Toolkit's \"High Resiliency\" model (and above) requires connections at multiple Direct Connect locations terminating on separate devices, eliminating both location- and device-level single points of failure. Layering a Site-to-Site VPN backup path with a deliberately less-preferred BGP route (longer AS_PATH or lower local preference relative to the Direct Connect routes) means BGP will naturally prefer Direct Connect when available and automatically fail over to the encrypted VPN path if all Direct Connect routes are withdrawn — with no manual re-routing needed.",
+      "incorrect": {
+        "A": "Using the same location and device provides no protection against a location- or device-level failure — both connections share the same failure domain, which the Resiliency Toolkit explicitly guards against.",
+        "C": "Direct Connect has no built-in automatic failover to the internet — a VPN or a second Direct Connect connection must be explicitly provisioned and configured as backup. LAG only aggregates bandwidth and redundancy of links to the same location, not against a location-level outage.",
+        "D": "A Direct Connect Gateway is a routing construct for connecting Direct Connect connections to VPCs across regions/accounts — it does not itself provide a backup connectivity path. Omitting the VPN backup leaves no failover option if both Direct Connect connections fail at once (e.g., a regional Direct Connect service disruption), violating the automatic-internet-failover requirement."
+      }
+    }
+  },
+  {
+    "id": "vpn-ecmp-throughput-scaling",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company connects an on-premises data center to a VPC using a single AWS Site-to-Site VPN connection (two tunnels, active/standby). The on-premises-to-AWS application needs sustained throughput of 3 Gbps, but each VPN tunnel is capped at roughly 1.25 Gbps. The company also wants the design to scale to connect dozens of on-premises sites to hundreds of VPCs in the future without significant added operational complexity, and cannot provision Direct Connect due to a short project timeline. What should a solutions architect recommend?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Increase the customer gateway device to a larger EC2 instance type to raise the per-tunnel throughput beyond 1.25 Gbps."
+      },
+      {
+        "key": "B",
+        "text": "Provision multiple Site-to-Site VPN connections to a Transit Gateway and enable Equal Cost Multi-Path (ECMP) routing across the tunnels to aggregate bandwidth, using the Transit Gateway as the hub for future on-premises sites and VPCs."
+      },
+      {
+        "key": "C",
+        "text": "Replace the Site-to-Site VPN with a single AWS Client VPN endpoint, which supports higher per-connection throughput than Site-to-Site VPN."
+      },
+      {
+        "key": "D",
+        "text": "Enable Accelerated Site-to-Site VPN on the existing single VPN connection terminating on a Virtual Private Gateway, which removes the per-tunnel throughput cap entirely."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "The ~1.25 Gbps per-tunnel limit is a protocol-level IPsec constraint, not something a larger customer gateway instance can overcome. AWS's documented pattern for exceeding a single tunnel's throughput is multiple VPN connections combined with ECMP routing through a Transit Gateway, which can spread traffic across several tunnels to aggregate bandwidth. A Transit Gateway also naturally scales into a hub-and-spoke model for connecting many future sites and VPCs with minimal added operational complexity.",
+      "incorrect": {
+        "A": "The per-tunnel throughput cap is a fixed protocol-level limit of the IPsec tunnel itself, not a function of the customer gateway device's compute size — a larger instance won't raise it.",
+        "C": "AWS Client VPN is designed for individual remote user/device access (an OpenVPN-based solution), not site-to-site network connectivity, and isn't a throughput-superior substitute for this use case.",
+        "D": "Accelerated Site-to-Site VPN uses AWS Global Accelerator to improve routing and connection reliability to the nearest AWS edge location — it does not remove or raise the ~1.25 Gbps per-tunnel throughput cap. Multiple tunnels with ECMP are still required to scale aggregate throughput."
+      }
+    }
+  },
+  {
+    "id": "route53-nested-latency-weighted-canary",
+    "domain": "Networking & Connectivity",
+    "scenario": "A media company runs an application in two AWS Regions (us-east-1 primary, ap-southeast-1 secondary) behind an Application Load Balancer in each Region. Requirements:\n\n- Under normal conditions, users should be routed to whichever Region gives them the lowest network latency.\n- If the primary Region's ALB becomes unhealthy, traffic must automatically fail over to the secondary Region, without depending on individual clients' DNS caching behavior to eventually pick up the change.\n- The company is also running a canary release in us-east-1 and wants only 5% of us-east-1-directed traffic to reach the canary environment, with the rest going to the stable environment — without altering the latency-based/failover behavior between the two Regions.\n\nHow should a solutions architect design the Route 53 record set to satisfy all of these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create two simple A records, one per Region, and have the application redirect canary traffic client-side."
+      },
+      {
+        "key": "B",
+        "text": "Create latency-based alias records for us-east-1 and ap-southeast-1, each with an associated Route 53 health check so an unhealthy Region is automatically excluded from DNS answers. Under the us-east-1 latency record, use a nested weighted record set (95%/5%) as the alias target to split traffic between the stable and canary target groups."
+      },
+      {
+        "key": "C",
+        "text": "Create a single weighted record set with the two Regions weighted 50/50, attach a health check to each weighted record, and manually adjust the weights during each canary release to redirect traffic."
+      },
+      {
+        "key": "D",
+        "text": "Create a failover routing policy with us-east-1 as primary and ap-southeast-1 as secondary, and use a separate CNAME for canary traffic that customers must opt into manually."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This requires nesting Route 53 routing policies, an advanced but well-documented pattern: a latency-based record set with health checks determines the lowest-latency healthy Region and lets Route 53 itself exclude an unhealthy Region's answers at the authoritative DNS level (rather than depending on client-side caching behavior). Nesting a weighted record set specifically under the us-east-1 latency-based record then splits only that Region's traffic 95/5 between stable and canary, without touching ap-southeast-1's routing at all.",
+      "incorrect": {
+        "A": "Simple records provide no latency-based or health-check-driven failover behavior — this fails both the latency-routing and automatic-failover requirements outright.",
+        "C": "A flat 50/50 weighted policy doesn't route by latency (violating the first requirement), and manually adjusting weights for every canary release is exactly the kind of operational overhead a well-architected design should avoid, not require.",
+        "D": "A failover policy satisfies automatic Region failover but abandons latency-based routing entirely under normal conditions (violating the first requirement), and a manual opt-in CNAME doesn't deliver the required automatic 5% canary split."
+      }
+    }
+  },
+  {
+    "id": "privatelink-saas-provider-model",
+    "domain": "Networking & Connectivity",
+    "scenario": "A software company (Provider Co.) wants to offer its internal analytics API as a paid service to external customers, each operating an independent AWS account outside Provider Co.'s AWS Organization. Requirements:\n\n- Customers must reach the API privately from their own VPCs, without traversing the public internet, and Provider Co. must have no visibility into or control over customers' networks.\n- Provider Co. must be able to explicitly approve or reject each customer's connection request before it becomes active.\n- Customers should reach the API using a friendly, private DNS name (e.g. api.providerco.com) rather than an AWS-generated endpoint DNS name.\n- Provider Co.'s infrastructure details (VPC CIDR, instance IPs, etc.) must remain hidden from customers at all times.\n\nWhich solution meets all of these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Provider Co. creates a VPC peering connection with each customer's VPC and shares route tables so customers can access the API using Provider Co.'s private IP addresses directly."
+      },
+      {
+        "key": "B",
+        "text": "Provider Co. creates an AWS PrivateLink endpoint service backed by a Network Load Balancer in front of the API, requires manual acceptance for new endpoint connections, and associates a verified private DNS name so customers can resolve api.providerco.com to the interface endpoint inside their own VPC."
+      },
+      {
+        "key": "C",
+        "text": "Provider Co. publishes the API through a public Amazon API Gateway endpoint secured with API keys, and instructs customers to allow-list Provider Co.'s IP ranges in their own VPC's outbound security group rules."
+      },
+      {
+        "key": "D",
+        "text": "Provider Co. creates a Transit Gateway and shares it with each customer account via AWS Resource Access Manager, and each customer attaches their VPC to Provider Co.'s Transit Gateway."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS PrivateLink is purpose-built for exactly this cross-organization SaaS-provider pattern: it exposes only the NLB's listening ports to consumers, hiding the provider's VPC CIDR, route tables, and instance IPs entirely; it requires explicit connection acceptance so the provider approves each customer individually; and it supports a verified private DNS name for the endpoint service so customers can use a custom domain instead of the auto-generated vpce-*.amazonaws.com name — all without the provider touching any customer network configuration.",
+      "incorrect": {
+        "A": "VPC Peering exposes full network reachability and requires sharing/coordinating route tables between two independent organizations, directly violating \"infrastructure details must remain hidden,\" and it has no per-connection approval workflow at the granularity PrivateLink provides.",
+        "C": "A public API Gateway endpoint traverses the public internet, violating that explicit requirement, and IP allow-listing is brittle and doesn't scale cleanly across many independent customer accounts compared to a private, connection-based network solution.",
+        "D": "Sharing a Transit Gateway via RAM grants full network-layer reachability into all of Provider Co.'s TGW-attached VPCs to any account that attaches — the opposite of hiding infrastructure — and it isn't designed for onboarding untrusted third-party accounts the way PrivateLink's explicit accept/reject model is."
+      }
+    }
   }
 ]

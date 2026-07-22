@@ -20,7 +20,7 @@ export interface McqQuestion {
   };
 }
 
-const questions = mcqData as McqQuestion[];
+const questions = mcqData as unknown as McqQuestion[];
 
 export function useMcqQueue() {
   const [index, setIndex] = useState(0);
