@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { Flashcard } from "@/components/Flashcard";
 import { CardSearch } from "@/components/CardSearch";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStudyQueue } from "@/lib/useStudyQueue";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import { useCardSearch } from "@/lib/useCardSearch";
 import type { Rating } from "@/lib/srs";
+import type { Card as CardData } from "@/lib/cards";
 
 export default function FlashcardsPage() {
   const {
@@ -20,6 +23,7 @@ export default function FlashcardsPage() {
     canGoBack,
     canGoForward,
     rate,
+    rateCard,
     goBack,
     goForward,
   } = useStudyQueue();
@@ -28,38 +32,76 @@ export default function FlashcardsPage() {
   const searchResults = useCardSearch(searchQuery);
   const isSearching = searchQuery.trim().length > 0;
 
+  // A card jumped to from search — reviewed independently of the due-queue
+  // position, but still through the same reveal/rate interaction.
+  const [lookupCard, setLookupCard] = useState<CardData | null>(null);
+  const [lookupRevealed, setLookupRevealed] = useState(false);
+  const isLookup = lookupCard !== null;
+
+  function returnToResults() {
+    setLookupCard(null);
+    setLookupRevealed(false);
+  }
+
   function handleRate(rating: Rating) {
     rate(rating);
     setRevealed(false);
   }
 
-  // Swipe right mirrors the right-arrow shortcut (reveal, then advance);
-  // swipe left mirrors the left-arrow shortcut (step back through history).
-  function handleAdvance() {
-    if (isHistory) {
-      if (canGoForward) goForward();
-    } else if (!revealed) {
-      setRevealed(true);
-    } else {
-      handleRate("good");
-    }
+  function handleLookupRate(rating: Rating) {
+    if (!lookupCard) return;
+    rateCard(lookupCard, rating);
+    returnToResults();
+  }
+
+  const activeCard = isLookup ? lookupCard : isSearching ? null : currentCard;
+  const activeRevealed = isLookup ? lookupRevealed : revealed;
+  const activeIsHistory = isLookup ? false : isHistory;
+  const activeCanGoBack = isLookup ? true : isSearching ? false : canGoBack;
+  const activeCanGoForward = isLookup ? false : isSearching ? false : canGoForward;
+
+  function activeOnReveal() {
+    if (isLookup) setLookupRevealed(true);
+    else setRevealed(true);
+  }
+
+  function activeOnRate(rating: Rating) {
+    if (isLookup) handleLookupRate(rating);
+    else handleRate(rating);
+  }
+
+  function activeGoBack() {
+    if (isLookup) returnToResults();
+    else if (!isSearching) goBack();
+  }
+
+  function activeGoForward() {
+    if (!isLookup && !isSearching) goForward();
   }
 
   useKeyboardShortcuts({
-    revealed,
-    isHistory,
-    canGoBack,
-    canGoForward,
-    onReveal: () => setRevealed(true),
-    onRate: handleRate,
-    onGoBack: goBack,
-    onGoForward: goForward,
+    revealed: activeRevealed,
+    isHistory: activeIsHistory,
+    canGoBack: activeCanGoBack,
+    canGoForward: activeCanGoForward,
+    onReveal: activeOnReveal,
+    onRate: activeOnRate,
+    onGoBack: activeGoBack,
+    onGoForward: activeGoForward,
   });
 
   const swipeHandlers = useSwipeGesture({
-    onSwipeRight: handleAdvance,
+    onSwipeRight: () => {
+      if (activeIsHistory) {
+        if (activeCanGoForward) activeGoForward();
+      } else if (!activeRevealed) {
+        activeOnReveal();
+      } else {
+        activeOnRate("good");
+      }
+    },
     onSwipeLeft: () => {
-      if (canGoBack) goBack();
+      if (activeCanGoBack) activeGoBack();
     },
   });
 
@@ -71,27 +113,51 @@ export default function FlashcardsPage() {
         <h1 className="mb-1 text-xl font-semibold text-foreground">SAP-C02 Flashcards</h1>
         <p className="mb-4 text-sm text-muted-foreground">
           {currentCard ? `${dueCount} due · ${studiedCount} studied` : `${studiedCount} studied`}
-          {canGoBack && <span className="opacity-60"> · ← previous card</span>}
+          {canGoBack && !isSearching && !isLookup && (
+            <span className="opacity-60"> · ← previous card</span>
+          )}
         </p>
 
-        <div className="mb-6">
-          <CardSearch query={searchQuery} onQueryChange={setSearchQuery} results={searchResults} />
-        </div>
-
-        {isSearching ? null : currentCard ? (
-          <div {...swipeHandlers}>
-            <Flashcard
-              front={currentCard.front}
-              back={currentCard.back}
-              revealed={isHistory || revealed}
-              isHistory={isHistory}
-              canGoForward={canGoForward}
-              onReveal={() => setRevealed(true)}
-              onRate={handleRate}
-              onGoForward={goForward}
+        {!isLookup && (
+          <div className="mb-6">
+            <CardSearch
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              results={searchResults}
+              onSelect={(card) => {
+                setLookupCard(card);
+                setLookupRevealed(false);
+              }}
             />
           </div>
-        ) : (
+        )}
+
+        {isLookup && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={returnToResults}
+            className="mb-4 -ml-2 text-muted-foreground"
+          >
+            <ArrowLeft />
+            Back to results
+          </Button>
+        )}
+
+        {isLookup || (!isSearching && currentCard) ? (
+          <div {...swipeHandlers}>
+            <Flashcard
+              front={activeCard!.front}
+              back={activeCard!.back}
+              revealed={activeIsHistory || activeRevealed}
+              isHistory={activeIsHistory}
+              canGoForward={activeCanGoForward}
+              onReveal={activeOnReveal}
+              onRate={activeOnRate}
+              onGoForward={activeGoForward}
+            />
+          </div>
+        ) : !isSearching ? (
           <Card>
             <CardContent className="text-center">
               <p className="font-medium text-foreground">No cards due right now.</p>
@@ -100,7 +166,7 @@ export default function FlashcardsPage() {
               </p>
             </CardContent>
           </Card>
-        )}
+        ) : null}
       </div>
     </div>
   );

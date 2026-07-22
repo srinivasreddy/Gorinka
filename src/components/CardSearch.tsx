@@ -1,21 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronRight, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { Card } from "@/lib/cards";
+import { stripHtml, type Card } from "@/lib/cards";
 
 interface CardSearchProps {
   query: string;
   onQueryChange: (query: string) => void;
   results: Card[];
+  onSelect: (card: Card) => void;
 }
 
-export function CardSearch({ query, onQueryChange, results }: CardSearchProps) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
+export function CardSearch({ query, onQueryChange, results, onSelect }: CardSearchProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="relative">
@@ -46,34 +43,24 @@ export function CardSearch({ query, onQueryChange, results }: CardSearchProps) {
               : `${results.length} card${results.length === 1 ? "" : "s"} found`}
           </p>
 
-          {results.map((card) => {
-            const isExpanded = expanded === card.front;
-            return (
-              <div
-                key={card.front}
-                className="overflow-hidden rounded-xl border border-border bg-card"
-              >
-                <button
-                  onClick={() => setExpanded(isExpanded ? null : card.front)}
-                  className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-foreground hover:bg-muted/50"
-                >
-                  <span dangerouslySetInnerHTML={{ __html: card.front }} />
-                  <ChevronDown
-                    className={cn(
-                      "size-4 shrink-0 text-muted-foreground transition-transform",
-                      isExpanded && "rotate-180"
-                    )}
-                  />
-                </button>
-                {isExpanded && (
-                  <p
-                    className="border-t px-4 py-3 text-sm leading-relaxed text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: card.back }}
-                  />
-                )}
-              </div>
-            );
-          })}
+          {results.map((card) => (
+            <button
+              key={card.front}
+              onClick={() => onSelect(card)}
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3 text-left hover:bg-muted/50"
+            >
+              <span className="flex-1 min-w-0">
+                <span
+                  className="block text-sm font-medium text-foreground"
+                  dangerouslySetInnerHTML={{ __html: card.front }}
+                />
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  {stripHtml(card.back)}
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+            </button>
+          ))}
         </div>
       )}
     </div>

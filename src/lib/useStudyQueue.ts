@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cards } from "@/lib/cards";
 import { isDue, loadProgress, saveProgress, schedule, type CardProgress, type Rating } from "@/lib/srs";
+import type { Card } from "@/lib/cards";
 
 export type { Card } from "@/lib/cards";
 
@@ -71,11 +72,19 @@ export function useStudyQueue() {
   const canGoBack = cursor > 0;
   const canGoForward = isHistory;
 
-  function rate(rating: Rating) {
-    if (!currentCard || !loaded || isHistory) return;
-    const key = currentCard.front;
+  // Rates an arbitrary card's SRS progress without touching the due-queue
+  // position -- used for ad hoc lookups (e.g. jumping to a card via search)
+  // that aren't part of the current review session.
+  function rateCard(card: Card, rating: Rating) {
+    if (!loaded) return;
+    const key = card.front;
     const updatedProgress = { ...progress, [key]: schedule(progress[key], rating) };
     rateMutation.mutate(updatedProgress);
+  }
+
+  function rate(rating: Rating) {
+    if (!currentCard || isHistory) return;
+    rateCard(currentCard, rating);
     setFrontier((f) => f + 1);
     setCursor((c) => c + 1);
   }
@@ -97,6 +106,7 @@ export function useStudyQueue() {
     canGoBack,
     canGoForward,
     rate,
+    rateCard,
     goBack,
     goForward,
   };
