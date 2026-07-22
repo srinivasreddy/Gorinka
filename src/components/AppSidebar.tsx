@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const NAV_ITEMS = [
-  { href: "/flashcards", label: "Anki Flashcards", icon: BookOpen },
+  { href: "/flashcards", label: "SAP-C02", icon: BookOpen },
   { href: "/mcq", label: "MCQ Practice", icon: ListChecks },
 ];
 
