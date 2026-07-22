@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
+const LINKS = [
+  { href: "/flashcards", label: "Anki Flashcards" },
+  { href: "/mcq", label: "MCQ Practice" },
+];
 
 export default function Home() {
   return (
@@ -12,20 +16,19 @@ export default function Home() {
           exam.
         </p>
 
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <Link
-              href="/flashcards"
-              className="text-base font-medium text-foreground hover:underline"
-            >
-              Anki Flashcards →
-            </Link>
-            <Separator />
-            <Link href="/mcq" className="text-base font-medium text-foreground hover:underline">
-              MCQ Practice →
-            </Link>
-          </CardContent>
-        </Card>
+        <nav className="flex items-center">
+          {LINKS.map((link, i) => (
+            <div key={link.href} className="flex items-center">
+              {i > 0 && <Separator orientation="vertical" className="mx-3 h-4" />}
+              <Link
+                href={link.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            </div>
+          ))}
+        </nav>
       </div>
     </div>
   );
