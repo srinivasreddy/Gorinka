@@ -29,7 +29,12 @@ interface LoadedState {
 
 export function useStudyQueue() {
   const [loaded, setLoaded] = useState<LoadedState | null>(null);
-  const [position, setPosition] = useState(0);
+  // `frontier` is how many cards have been rated so far — the boundary
+  // between already-rated history and the next unrated card.
+  const [frontier, setFrontier] = useState(0);
+  // `cursor` is the card currently on screen; it can sit anywhere from 0
+  // up to `frontier` (viewing history) to show the live, unrated card.
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     const progress = loadProgress();
@@ -46,18 +51,41 @@ export function useStudyQueue() {
   const progress = loaded?.progress ?? {};
   const queue = loaded?.queue ?? [];
 
-  const currentCard = queue[position] !== undefined ? cards[queue[position]] : null;
-  const dueCount = queue.length - position;
+  const isHistory = cursor < frontier;
+  const currentCard = queue[cursor] !== undefined ? cards[queue[cursor]] : null;
+  const dueCount = queue.length - frontier;
   const studiedCount = Object.keys(progress).length;
+  const canGoBack = cursor > 0;
+  const canGoForward = isHistory;
 
   function rate(rating: Rating) {
-    if (!currentCard || !loaded) return;
+    if (!currentCard || !loaded || isHistory) return;
     const key = currentCard.front;
     const updatedProgress = { ...progress, [key]: schedule(progress[key], rating) };
     saveProgress(updatedProgress);
     setLoaded({ ...loaded, progress: updatedProgress });
-    setPosition((p) => p + 1);
+    setFrontier((f) => f + 1);
+    setCursor((c) => c + 1);
   }
 
-  return { ready, currentCard, dueCount, studiedCount, rate };
+  function goBack() {
+    setCursor((c) => Math.max(0, c - 1));
+  }
+
+  function goForward() {
+    setCursor((c) => Math.min(frontier, c + 1));
+  }
+
+  return {
+    ready,
+    currentCard,
+    dueCount,
+    studiedCount,
+    isHistory,
+    canGoBack,
+    canGoForward,
+    rate,
+    goBack,
+    goForward,
+  };
 }

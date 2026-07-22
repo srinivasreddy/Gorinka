@@ -29,13 +29,30 @@ interface FlashcardProps {
   front: string;
   back: string;
   revealed: boolean;
+  isHistory: boolean;
+  canGoForward: boolean;
   onReveal: () => void;
   onRate: (rating: Rating) => void;
+  onGoForward: () => void;
 }
 
-export function Flashcard({ front, back, revealed, onReveal, onRate }: FlashcardProps) {
+export function Flashcard({
+  front,
+  back,
+  revealed,
+  isHistory,
+  canGoForward,
+  onReveal,
+  onRate,
+  onGoForward,
+}: FlashcardProps) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-8 min-h-[260px] flex flex-col">
+      {isHistory && (
+        <p className="mb-4 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          Reviewing previous card
+        </p>
+      )}
       <div className="flex-1 flex flex-col justify-center">
         <p
           className="text-lg font-medium text-zinc-900 dark:text-zinc-100"
@@ -49,7 +66,15 @@ export function Flashcard({ front, back, revealed, onReveal, onRate }: Flashcard
         )}
       </div>
 
-      {!revealed ? (
+      {isHistory ? (
+        <button
+          onClick={onGoForward}
+          disabled={!canGoForward}
+          className="mt-6 w-full rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 font-medium hover:opacity-90 transition disabled:opacity-50"
+        >
+          Continue <span className="opacity-60 font-normal">(→)</span>
+        </button>
+      ) : !revealed ? (
         <button
           onClick={onReveal}
           className="mt-6 w-full rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 font-medium hover:opacity-90 transition"

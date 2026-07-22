@@ -12,14 +12,50 @@ const RATING_KEYS: Record<string, Rating> = {
 
 interface KeyboardShortcutsOptions {
   revealed: boolean;
+  isHistory: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
   onReveal: () => void;
   onRate: (rating: Rating) => void;
+  onGoBack: () => void;
+  onGoForward: () => void;
 }
 
-export function useKeyboardShortcuts({ revealed, onReveal, onRate }: KeyboardShortcutsOptions) {
+export function useKeyboardShortcuts({
+  revealed,
+  isHistory,
+  canGoBack,
+  canGoForward,
+  onReveal,
+  onRate,
+  onGoBack,
+  onGoForward,
+}: KeyboardShortcutsOptions) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === "ArrowLeft") {
+        if (canGoBack) {
+          event.preventDefault();
+          onGoBack();
+        }
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        if (isHistory) {
+          if (canGoForward) onGoForward();
+        } else if (!revealed) {
+          onReveal();
+        } else {
+          onRate("good");
+        }
+        return;
+      }
+
+      if (isHistory) return;
 
       if (!revealed) {
         if (event.key === " " || event.key === "Enter") {
@@ -44,5 +80,5 @@ export function useKeyboardShortcuts({ revealed, onReveal, onRate }: KeyboardSho
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [revealed, onReveal, onRate]);
+  }, [revealed, isHistory, canGoBack, canGoForward, onReveal, onRate, onGoBack, onGoForward]);
 }

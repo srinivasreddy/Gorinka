@@ -7,7 +7,18 @@ import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import type { Rating } from "@/lib/srs";
 
 export default function Home() {
-  const { ready, currentCard, dueCount, studiedCount, rate } = useStudyQueue();
+  const {
+    ready,
+    currentCard,
+    dueCount,
+    studiedCount,
+    isHistory,
+    canGoBack,
+    canGoForward,
+    rate,
+    goBack,
+    goForward,
+  } = useStudyQueue();
   const [revealed, setRevealed] = useState(false);
 
   function handleRate(rating: Rating) {
@@ -17,8 +28,13 @@ export default function Home() {
 
   useKeyboardShortcuts({
     revealed,
+    isHistory,
+    canGoBack,
+    canGoForward,
     onReveal: () => setRevealed(true),
     onRate: handleRate,
+    onGoBack: goBack,
+    onGoForward: goForward,
   });
 
   if (!ready) return null;
@@ -31,15 +47,21 @@ export default function Home() {
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
           {currentCard ? `${dueCount} due · ${studiedCount} studied` : `${studiedCount} studied`}
+          {canGoBack && (
+            <span className="opacity-60"> · ← previous card</span>
+          )}
         </p>
 
         {currentCard ? (
           <Flashcard
             front={currentCard.front}
             back={currentCard.back}
-            revealed={revealed}
+            revealed={isHistory || revealed}
+            isHistory={isHistory}
+            canGoForward={canGoForward}
             onReveal={() => setRevealed(true)}
             onRate={handleRate}
+            onGoForward={goForward}
           />
         ) : (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-8 text-center">
