@@ -72,7 +72,12 @@ export function Flashcard({
         </div>
 
         {isHistory ? (
-          <Button onClick={onGoForward} disabled={!canGoForward} size="lg" className="mt-6 w-full">
+          <Button
+            onClick={onGoForward}
+            disabled={!canGoForward}
+            size="lg"
+            className="mt-6 h-11 w-full"
+          >
             Continue <span className="opacity-60 font-normal">(→)</span>
           </Button>
         ) : !revealed ? (
