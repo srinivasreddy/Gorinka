@@ -5,6 +5,7 @@ import { Flashcard } from "@/components/Flashcard";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStudyQueue } from "@/lib/useStudyQueue";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
+import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import type { Rating } from "@/lib/srs";
 
 export default function FlashcardsPage() {
@@ -27,6 +28,18 @@ export default function FlashcardsPage() {
     setRevealed(false);
   }
 
+  // Swipe right mirrors the right-arrow shortcut (reveal, then advance);
+  // swipe left mirrors the left-arrow shortcut (step back through history).
+  function handleAdvance() {
+    if (isHistory) {
+      if (canGoForward) goForward();
+    } else if (!revealed) {
+      setRevealed(true);
+    } else {
+      handleRate("good");
+    }
+  }
+
   useKeyboardShortcuts({
     revealed,
     isHistory,
@@ -36,6 +49,13 @@ export default function FlashcardsPage() {
     onRate: handleRate,
     onGoBack: goBack,
     onGoForward: goForward,
+  });
+
+  const swipeHandlers = useSwipeGesture({
+    onSwipeRight: handleAdvance,
+    onSwipeLeft: () => {
+      if (canGoBack) goBack();
+    },
   });
 
   if (!ready) return null;
@@ -50,16 +70,18 @@ export default function FlashcardsPage() {
         </p>
 
         {currentCard ? (
-          <Flashcard
-            front={currentCard.front}
-            back={currentCard.back}
-            revealed={isHistory || revealed}
-            isHistory={isHistory}
-            canGoForward={canGoForward}
-            onReveal={() => setRevealed(true)}
-            onRate={handleRate}
-            onGoForward={goForward}
-          />
+          <div {...swipeHandlers}>
+            <Flashcard
+              front={currentCard.front}
+              back={currentCard.back}
+              revealed={isHistory || revealed}
+              isHistory={isHistory}
+              canGoForward={canGoForward}
+              onReveal={() => setRevealed(true)}
+              onRate={handleRate}
+              onGoForward={goForward}
+            />
+          </div>
         ) : (
           <Card>
             <CardContent className="text-center">
