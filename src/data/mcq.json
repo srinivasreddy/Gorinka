@@ -1,0 +1,34 @@
+[
+  {
+    "id": "vpc-privatelink-shared-services",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company runs a three-tier web application across two AWS accounts within the same AWS Organization: a Shared Services account hosting a fleet of Network Load Balancers behind a central inspection VPC, and a Workload account hosting the application in a separate VPC. The security team requires that:\n\n- Traffic from the Workload VPC to the Shared Services VPC must never traverse the public internet.\n- The Shared Services team must be able to add or remove consuming accounts without modifying route tables in every workload VPC.\n- The solution must scale to support hundreds of workload VPCs across many accounts in the future without hitting AWS's default VPC peering connection limits per VPC.\n\nWhich solution meets these requirements with the least ongoing operational overhead?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a VPC Peering connection between the Shared Services VPC and each Workload VPC. Update route tables in every VPC to route traffic to the peered CIDR ranges."
+      },
+      {
+        "key": "B",
+        "text": "Create a Transit Gateway, attach every VPC (Shared Services and all Workload VPCs) to it, and configure Transit Gateway route tables to control which VPCs can reach the Shared Services VPC."
+      },
+      {
+        "key": "C",
+        "text": "Deploy an AWS PrivateLink endpoint service in the Shared Services account fronted by the Network Load Balancers, and create VPC interface endpoints in each Workload VPC that consume the service."
+      },
+      {
+        "key": "D",
+        "text": "Configure AWS Site-to-Site VPN connections between the Shared Services VPC and each Workload VPC using a Virtual Private Gateway."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "AWS PrivateLink is purpose-built for this exact pattern — a service provider (Shared Services, fronted by an NLB) exposing a service to many consumer VPCs/accounts without any VPC peering, route table changes, or CIDR overlap concerns. Adding a new consuming account is just a matter of accepting a new endpoint connection — the provider never touches route tables, and there's no limit tied to the number of consumers the way peering has a per-VPC peering connection soft limit (125 by default, though raisable). Traffic stays entirely on the AWS network backbone, never touching the public internet.",
+      "incorrect": {
+        "A": "VPC Peering doesn't scale here — peering is strictly 1:1 between VPCs, has no transitive routing, and each new workload VPC requires both a new peering connection AND route table updates in every VPC involved. This directly violates the \"hundreds of VPCs\" and \"least operational overhead\" requirements.",
+        "B": "A very plausible-looking distractor, and often the right answer for full network-layer connectivity between many VPCs — but it's the wrong tool here because it grants full network reachability (not just access to specific NLB-fronted services), and still requires the Shared Services team to manage Transit Gateway route table associations/propagations for every new attachment. PrivateLink better matches \"expose one service, don't manage per-consumer routing.\"",
+        "D": "Site-to-Site VPN is designed for connecting to on-premises networks, not VPC-to-VPC connectivity within AWS. It adds unnecessary encryption/tunnel overhead and per-connection management, with no advantage over PrivateLink or Transit Gateway for intra-AWS traffic."
+      }
+    }
+  }
+]
