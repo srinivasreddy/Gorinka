@@ -1,12 +1,16 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { Rating } from "@/lib/srs";
 
 const RATING_STYLES: Record<Rating, string> = {
-  again: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
-  hard: "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300",
-  good: "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300",
-  easy: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
+  again:
+    "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900",
+  hard: "bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:hover:bg-orange-900",
+  good: "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950 dark:text-green-300 dark:hover:bg-green-900",
+  easy: "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900",
 };
 
 const RATING_LABELS: Record<Rating, string> = {
@@ -47,54 +51,50 @@ export function Flashcard({
   onGoForward,
 }: FlashcardProps) {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-8 min-h-[260px] flex flex-col">
-      {isHistory && (
-        <p className="mb-4 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-          Reviewing previous card
-        </p>
-      )}
-      <div className="flex-1 flex flex-col justify-center">
-        <p
-          className="text-lg font-medium text-zinc-900 dark:text-zinc-100"
-          dangerouslySetInnerHTML={{ __html: front }}
-        />
-        {revealed && (
-          <p
-            className="mt-4 text-base text-zinc-600 dark:text-zinc-300 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: back }}
-          />
+    <Card className="min-h-65">
+      <CardContent className="flex h-full flex-col">
+        {isHistory && (
+          <Badge variant="secondary" className="mb-4 w-fit">
+            Reviewing previous card
+          </Badge>
         )}
-      </div>
-
-      {isHistory ? (
-        <button
-          onClick={onGoForward}
-          disabled={!canGoForward}
-          className="mt-6 w-full rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 font-medium hover:opacity-90 transition disabled:opacity-50"
-        >
-          Continue <span className="opacity-60 font-normal">(→)</span>
-        </button>
-      ) : !revealed ? (
-        <button
-          onClick={onReveal}
-          className="mt-6 w-full rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 font-medium hover:opacity-90 transition"
-        >
-          Show answer <span className="opacity-60 font-normal">(Space)</span>
-        </button>
-      ) : (
-        <div className="mt-6 grid grid-cols-4 gap-2">
-          {RATINGS.map((rating) => (
-            <button
-              key={rating}
-              onClick={() => onRate(rating)}
-              className={`rounded-xl py-3 text-sm font-medium hover:opacity-80 ${RATING_STYLES[rating]}`}
-            >
-              {RATING_LABELS[rating]}{" "}
-              <span className="opacity-60">({RATING_KEYS[rating]})</span>
-            </button>
-          ))}
+        <div className="flex flex-1 flex-col justify-center">
+          <p
+            className="text-lg font-medium text-foreground"
+            dangerouslySetInnerHTML={{ __html: front }}
+          />
+          {revealed && (
+            <p
+              className="mt-4 text-base leading-relaxed text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: back }}
+            />
+          )}
         </div>
-      )}
-    </div>
+
+        {isHistory ? (
+          <Button onClick={onGoForward} disabled={!canGoForward} size="lg" className="mt-6 w-full">
+            Continue <span className="opacity-60 font-normal">(→)</span>
+          </Button>
+        ) : !revealed ? (
+          <Button onClick={onReveal} size="lg" className="mt-6 w-full">
+            Show answer <span className="opacity-60 font-normal">(Space)</span>
+          </Button>
+        ) : (
+          <div className="mt-6 grid grid-cols-4 gap-2">
+            {RATINGS.map((rating) => (
+              <Button
+                key={rating}
+                onClick={() => onRate(rating)}
+                size="lg"
+                className={RATING_STYLES[rating]}
+              >
+                {RATING_LABELS[rating]}{" "}
+                <span className="opacity-60">({RATING_KEYS[rating]})</span>
+              </Button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
