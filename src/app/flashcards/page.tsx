@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Flashcard } from "@/components/Flashcard";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStudyQueue } from "@/lib/useStudyQueue";
@@ -42,14 +41,8 @@ export default function FlashcardsPage() {
   if (!ready) return null;
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-muted/30 px-4 py-10 font-sans">
+    <div className="flex flex-1 flex-col items-center bg-muted/30 px-4 py-10 font-sans">
       <div className="w-full max-w-xl">
-        <Link
-          href="/"
-          className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Home
-        </Link>
         <h1 className="mb-1 text-xl font-semibold text-foreground">SAP-C02 Flashcards</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           {currentCard ? `${dueCount} due · ${studiedCount} studied` : `${studiedCount} studied`}
