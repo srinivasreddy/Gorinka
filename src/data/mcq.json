@@ -222,5 +222,197 @@
         "D": "Sharing a Transit Gateway via RAM grants full network-layer reachability into all of Provider Co.'s TGW-attached VPCs to any account that attaches — the opposite of hiding infrastructure — and it isn't designed for onboarding untrusted third-party accounts the way PrivateLink's explicit accept/reject model is."
       }
     }
+  },
+  {
+    "id": "iam-permissions-boundary-privilege-escalation",
+    "domain": "Identity & Access Management",
+    "scenario": "A company wants to delegate to its DevOps team the ability to create new IAM roles and policies for their applications, but must guarantee that no one — including the DevOps team itself, even by accident — can ever create or escalate a role to administrator-level access. Developers still need to be able to create functional roles for legitimate application services. Which approach achieves this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Attach an explicit Deny policy to each DevOps IAM user for iam:CreateRole with a condition matching the AdministratorAccess managed policy ARN."
+      },
+      {
+        "key": "B",
+        "text": "Set a permissions boundary on the DevOps IAM role that caps the maximum permissions any role or user the DevOps team creates can ever have, and grant DevOps iam:CreateRole/iam:PutRolePolicy permissions only when that boundary is specified."
+      },
+      {
+        "key": "C",
+        "text": "Use an AWS Config rule to detect any IAM role that has AdministratorAccess attached and automatically delete it on a scheduled basis."
+      },
+      {
+        "key": "D",
+        "text": "Create a Service Control Policy at the OU level that denies iam:CreateRole entirely, and grant DevOps engineers break-glass root access whenever they need to create a new role."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Permissions boundaries are IAM's mechanism for capping the maximum permissions a delegated administrator (here, DevOps) can ever grant to identities they create. Even if DevOps attaches an overly broad policy to a new role, the role's effective permissions are the intersection of its policy AND the boundary — so it can never exceed the boundary, regardless of what DevOps grants. This lets DevOps keep creating functional roles for legitimate services while making privilege escalation architecturally impossible rather than merely policy-forbidden.",
+      "incorrect": {
+        "A": "An explicit deny targeting one specific managed policy ARN is trivially bypassed — DevOps could attach an inline policy or a different managed policy with equivalent permissions. It blocks one technique, not the underlying capability.",
+        "C": "Detect-and-delete is a reactive, not preventive, control — there's a window where an over-privileged role exists and could already have been used before Config catches and removes it. This fails \"guarantee...can ever,\" which requires prevention.",
+        "D": "Denying iam:CreateRole entirely via SCP blocks DevOps from creating any role at all, including legitimate ones for application services — violating the requirement that developers must still be able to create functional roles. Routine break-glass root access is also a security anti-pattern and heavy operational overhead."
+      }
+    }
+  },
+  {
+    "id": "organizations-invite-existing-accounts",
+    "domain": "Identity & Access Management",
+    "scenario": "A company acquires another company and must bring the acquired company's 15 existing standalone AWS accounts into its AWS Organization. Requirements:\n\n- Consolidated billing must cover all accounts, including the newly acquired ones.\n- The acquiring company's existing SCP guardrails must eventually apply to the acquired accounts, but NOT immediately — there needs to be a grace period while each acquired account's workloads are assessed for compliance.\n- The acquired accounts' workloads must keep running without service interruption throughout the process.\n\nWhich approach satisfies these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the acquired company close all 15 existing accounts and create brand-new accounts inside the acquiring company's AWS Organization, manually migrating all resources."
+      },
+      {
+        "key": "B",
+        "text": "Send an invitation from the Organization's management account to each of the 15 existing accounts to join the Organization; place newly joined accounts into a dedicated, temporary OU with no (or minimal) SCPs attached, then move each account into the appropriate production OU with full SCPs once its assessment is complete."
+      },
+      {
+        "key": "C",
+        "text": "Use AWS Control Tower's Account Factory to enroll the 15 existing accounts, which immediately and unconditionally attaches all guardrails currently applied to other accounts."
+      },
+      {
+        "key": "D",
+        "text": "Add the 15 accounts to the Organization directly under the root, and rely on IAM policies within each account to temporarily block actions until the account is assessed."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS Organizations lets existing standalone accounts be invited to join an Organization without recreating them or interrupting running workloads. Placing newly invited accounts into a dedicated staging/quarantine OU with no or minimal SCPs — since SCPs are inherited by OU membership — then moving them into production OUs (with full guardrails) once assessed is the standard \"safe landing zone for acquired accounts\" pattern, cleanly satisfying the grace-period requirement. Consolidated billing applies automatically to every member account the moment it joins, satisfying that requirement immediately.",
+      "incorrect": {
+        "A": "Recreating accounts and manually migrating every resource is extremely high-effort, causes service interruption, and is exactly what the account-invitation feature of Organizations exists to avoid.",
+        "C": "Control Tower enrollment of existing accounts does apply guardrails, but doing so \"immediately and unconditionally\" directly contradicts the explicit grace-period requirement before enforcement.",
+        "D": "SCPs are the correct org-level control for this, not per-account IAM policies — IAM policies can't provide the same organization-wide guardrail enforcement, and manually rigging temporary IAM blocks across 15 separate accounts is far higher operational overhead than simple OU placement."
+      }
+    }
+  },
+  {
+    "id": "scp-prevent-root-disable-cloudtrail",
+    "domain": "Identity & Access Management",
+    "scenario": "A security team wants to guarantee that no IAM principal in any account within a specific OU (containing all production accounts) can ever disable AWS CloudTrail, delete CloudTrail logs, or disable GuardDuty — including the account's own root user or an administrator holding an AdministratorAccess IAM policy. Which approach achieves this guarantee?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Attach an IAM policy to every administrator role in each production account explicitly denying cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector."
+      },
+      {
+        "key": "B",
+        "text": "Attach a Service Control Policy to the production OU that explicitly denies cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector, and ensure no SCP elsewhere in the hierarchy re-allows them."
+      },
+      {
+        "key": "C",
+        "text": "Enable an AWS Config managed rule that flags CloudTrail or GuardDuty being disabled, and send an SNS notification to the security team when this happens."
+      },
+      {
+        "key": "D",
+        "text": "Use IAM Access Analyzer to continuously monitor and automatically revoke any permissions related to CloudTrail or GuardDuty modification across all production accounts."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "SCPs are the only control here that applies to every principal in an account — including the root user — and they set a hard ceiling that no IAM policy within the account can ever exceed, no matter how privileged. This is the only option that can guarantee the action is blocked \"even for the root user,\" since IAM policies don't restrict root the same way, and detective controls only report on an action after it has already happened.",
+      "incorrect": {
+        "A": "IAM policies attached to administrator roles don't apply to the account's root user, and a sufficiently privileged administrator could simply detach or modify the policy itself — IAM policies aren't a hard ceiling the way SCPs are, so this isn't a guarantee.",
+        "C": "Config plus SNS is a detective control: it tells the security team AFTER CloudTrail or GuardDuty has already been disabled, not a preventive guarantee that it never happens.",
+        "D": "IAM Access Analyzer identifies external/unintended access and unused permissions for review — it doesn't proactively revoke permissions in real time to block specific API calls; this describes a capability Access Analyzer doesn't have."
+      }
+    }
+  },
+  {
+    "id": "control-tower-landing-zone-account-factory",
+    "domain": "Identity & Access Management",
+    "scenario": "A company is building a brand-new multi-account AWS environment from scratch for a 200-person engineering organization expected to grow past 500 accounts within three years. Requirements:\n\n- Consistent security and compliance guardrails must be automatically applied to every new account from the moment it's created.\n- Engineering teams need self-service account provisioning, without the central platform team manually creating each account.\n- Centralized visibility into guardrail compliance status is required across all accounts.\n- The platform team is only 3 people, so initial setup effort must be minimized.\n\nWhich approach best meets these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually create each AWS account using AWS Organizations, write custom CloudFormation StackSets to deploy baseline security resources to each account, and build an internal ticketing system for account requests."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Control Tower to set up a landing zone with preventive (SCP-based) and detective (Config-based) guardrails, and let engineering teams self-service provision new accounts through the Account Factory, each automatically inheriting the landing zone's guardrails."
+      },
+      {
+        "key": "C",
+        "text": "Create one large shared AWS account for all 500 engineers and use IAM policies alone to separate teams, avoiding multi-account management entirely."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Organizations with SCPs only, and let each engineering team independently create and configure their own accounts outside any centralized governance model, retrofitting guardrails later."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This is exactly what Control Tower automates: landing zone setup (Organizations plus logging/audit accounts and guardrails) with minimal manual effort for a small platform team, self-service account provisioning via Account Factory so engineering teams don't wait on the platform team, automatic application of both preventive and detective guardrails to every new account, and centralized compliance visibility through the Control Tower dashboard — satisfying every stated requirement with the least initial setup effort.",
+      "incorrect": {
+        "A": "Hand-building StackSets and a ticketing system for account provisioning is a large custom-engineering burden for a 3-person team — the opposite of minimizing setup effort — and doesn't give the automatic new-account guardrail application Control Tower provides out of the box.",
+        "C": "A single shared account for 500 engineers fails basic security isolation and blast-radius principles the exam consistently tests against; IAM policies alone can't replicate the isolation a multi-account strategy provides.",
+        "D": "Retrofitting guardrails after account creation, rather than applying them automatically at creation time, leaves a window of ungoverned accounts and requires ongoing manual remediation — directly contradicting \"automatically applied... from the moment it's created.\""
+      }
+    }
+  },
+  {
+    "id": "kms-cross-account-key-policy-phi",
+    "domain": "Identity & Access Management",
+    "scenario": "A healthcare company stores PHI in S3 buckets across multiple AWS accounts (encrypted with SSE-KMS) within the same AWS Organization. Requirements:\n\n- A single Security account should own and manage the KMS keys used to encrypt PHI data, for centralized key management and audit.\n- Application accounts must be able to use these keys to encrypt/decrypt their own S3 data, without being able to modify the key policy, delete the key, or grant other accounts access to it.\n- Every key usage — every encrypt/decrypt call, by whom, from which account — must be centrally auditable.\n- If a key is ever compromised or needs replacing, existing encrypted data must remain decryptable without re-encrypting the entire multi-petabyte dataset.\n\nWhich combination of actions meets these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a separate customer managed KMS key in each application account, and use S3 Cross-Region Replication to centralize copies of all objects in the Security account for auditing."
+      },
+      {
+        "key": "B",
+        "text": "Create customer managed KMS keys in the Security account with a key policy that grants specific application accounts kms:Encrypt/kms:Decrypt/kms:GenerateDataKey (but not kms:PutKeyPolicy or kms:ScheduleKeyDeletion), reference the key by ARN in each application account's S3 default encryption setting, enable automatic key rotation, and rely on AWS CloudTrail (which logs all KMS API calls) for centralized auditing."
+      },
+      {
+        "key": "C",
+        "text": "Use the AWS-managed key (aws/s3) in each application account, since AWS-managed keys already provide automatic centralized management with no configuration needed."
+      },
+      {
+        "key": "D",
+        "text": "Create one customer managed KMS key in the Security account and share the raw key material with each application account so they can perform encryption locally without calling the KMS API each time."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "A KMS key policy is the primary cross-account access-control mechanism for a key: granting specific actions (Encrypt/Decrypt/GenerateDataKey) to application account principals while withholding key-management actions (PutKeyPolicy, ScheduleKeyDeletion, CreateGrant) achieves centralized ownership with least-privilege cross-account usage. Every KMS API call is automatically logged to CloudTrail with the calling account and identity, satisfying centralized auditability. KMS's automatic annual key rotation replaces only the backing cryptographic material while keeping the same key ID/ARN, so previously encrypted data stays decryptable without any re-encryption — directly satisfying the compromised-key requirement.",
+      "incorrect": {
+        "A": "Separate keys per account plus S3 replication for \"auditing\" doesn't centralize key management at all (violating the core requirement) and needlessly duplicates a multi-petabyte dataset just to inspect access patterns — CloudTrail already provides this without replication.",
+        "C": "AWS-managed keys (aws/s3) cannot be shared across accounts via a custom key policy — they're scoped to a single account/service and don't support the cross-account access-control model this scenario requires, nor the fine-grained \"can't delete/modify policy\" separation, since there's no custom key policy to write.",
+        "D": "KMS key material is never exportable or shareable by design — that's the core security guarantee of the service, backed by HSMs. This option describes something KMS fundamentally does not support."
+      }
+    }
+  },
+  {
+    "id": "cross-account-role-assume-role-msp",
+    "domain": "Identity & Access Management",
+    "scenario": "A managed-service provider (MSP) manages AWS infrastructure for 50 client companies, each with its own separate AWS account (none inside the MSP's AWS Organization). MSP engineers need to operate in any client account. Requirements:\n\n- MSP engineers must never have long-lived IAM credentials (access keys) stored in or issued for client accounts.\n- Each client must be able to independently revoke the MSP's access at any time, without depending on the MSP's cooperation.\n- Access granted to the MSP must be scoped to only what's needed (least privilege), and different clients may want to authorize different permission sets.\n- The MSP must never be able to grant itself broader access than what each client explicitly authorized.\n\nWhich approach satisfies these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Each client creates an IAM user for the MSP with an access key and shares the credentials over a secure channel; the MSP stores these credentials in its own secrets manager."
+      },
+      {
+        "key": "B",
+        "text": "Each client creates an IAM role with a trust policy allowing the MSP's AWS account to assume it (optionally requiring an external ID), attaches a permissions policy scoped to only what that client authorizes, and MSP engineers use AWS STS AssumeRole from their own IAM identities to obtain temporary credentials scoped to that role whenever needed."
+        },
+      {
+        "key": "C",
+        "text": "The MSP creates a single IAM role in its own account with AdministratorAccess and shares that role's credentials with all client accounts to simplify management."
+      },
+      {
+        "key": "D",
+        "text": "Each client adds the MSP's AWS account as a member of their AWS Organization and applies an SCP granting the MSP account full access to all resources."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Cross-account IAM roles with AssumeRole are AWS's recommended pattern for third-party/MSP access: STS issues only short-lived temporary credentials on each assumption, so no long-lived credentials are ever created or shared. The client fully owns the role and its trust policy, so access can be revoked instantly (by deleting or updating the role) without the MSP's involvement. The client also defines the role's permissions policy, so each client can scope different permissions, and the MSP can never grant itself more than that policy allows since the client — not the MSP — controls it. An external ID in the trust policy additionally mitigates the confused-deputy problem when one MSP account is trusted by many clients.",
+      "incorrect": {
+        "A": "Long-lived IAM access keys directly violate \"must never have long-lived credentials,\" are harder to revoke instantly compared to updating a role's trust policy, and carry ongoing credential-leakage risk.",
+        "C": "A single AdministratorAccess role fully controlled by the MSP violates least privilege and \"must never grant itself broader access than authorized\" — the MSP, not each client, would control the permissions, and every client would receive identical, excessive access.",
+        "D": "Making the MSP a full member of each client's Organization with a broad SCP is both operationally extreme and gives the MSP far more integration and visibility into the client's environment than a scoped cross-account role requires. SCPs also don't function as a mechanism to grant access to an external account this way — they set maximum permissions within an Organization, not cross-account grants."
+      }
+    }
   }
 ]
