@@ -16,6 +16,13 @@ const RATING_LABELS: Record<Rating, string> = {
   easy: "Easy",
 };
 
+const RATING_KEYS: Record<Rating, string> = {
+  again: "1",
+  hard: "2",
+  good: "3",
+  easy: "4",
+};
+
 const RATINGS: Rating[] = ["again", "hard", "good", "easy"];
 
 interface FlashcardProps {
@@ -47,7 +54,7 @@ export function Flashcard({ front, back, revealed, onReveal, onRate }: Flashcard
           onClick={onReveal}
           className="mt-6 w-full rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 py-3 font-medium hover:opacity-90 transition"
         >
-          Show answer
+          Show answer <span className="opacity-60 font-normal">(Space)</span>
         </button>
       ) : (
         <div className="mt-6 grid grid-cols-4 gap-2">
@@ -57,7 +64,8 @@ export function Flashcard({ front, back, revealed, onReveal, onRate }: Flashcard
               onClick={() => onRate(rating)}
               className={`rounded-xl py-3 text-sm font-medium hover:opacity-80 ${RATING_STYLES[rating]}`}
             >
-              {RATING_LABELS[rating]}
+              {RATING_LABELS[rating]}{" "}
+              <span className="opacity-60">({RATING_KEYS[rating]})</span>
             </button>
           ))}
         </div>

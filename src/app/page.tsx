@@ -3,10 +3,23 @@
 import { useState } from "react";
 import { Flashcard } from "@/components/Flashcard";
 import { useStudyQueue } from "@/lib/useStudyQueue";
+import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
+import type { Rating } from "@/lib/srs";
 
 export default function Home() {
   const { ready, currentCard, dueCount, studiedCount, rate } = useStudyQueue();
   const [revealed, setRevealed] = useState(false);
+
+  function handleRate(rating: Rating) {
+    rate(rating);
+    setRevealed(false);
+  }
+
+  useKeyboardShortcuts({
+    revealed,
+    onReveal: () => setRevealed(true),
+    onRate: handleRate,
+  });
 
   if (!ready) return null;
 
@@ -26,10 +39,7 @@ export default function Home() {
             back={currentCard.back}
             revealed={revealed}
             onReveal={() => setRevealed(true)}
-            onRate={(rating) => {
-              rate(rating);
-              setRevealed(false);
-            }}
+            onRate={handleRate}
           />
         ) : (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-8 text-center">
