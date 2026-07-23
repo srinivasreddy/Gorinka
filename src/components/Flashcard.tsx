@@ -35,7 +35,6 @@ interface FlashcardProps {
   revealed: boolean;
   isHistory: boolean;
   canGoForward: boolean;
-  onReveal: () => void;
   onRate: (rating: Rating) => void;
   onGoForward: () => void;
 }
@@ -46,7 +45,6 @@ export function Flashcard({
   revealed,
   isHistory,
   canGoForward,
-  onReveal,
   onRate,
   onGoForward,
 }: FlashcardProps) {
@@ -80,11 +78,7 @@ export function Flashcard({
           >
             Continue <span className="opacity-60 font-normal">(→)</span>
           </Button>
-        ) : !revealed ? (
-          <Button onClick={onReveal} size="lg" className="mt-6 w-full">
-            Show answer <span className="opacity-60 font-normal">(Space)</span>
-          </Button>
-        ) : (
+        ) : !revealed ? null : (
           <div className="mt-6 grid grid-cols-4 gap-2">
             {RATINGS.map((rating) => (
               <Button

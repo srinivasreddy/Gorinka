@@ -159,7 +159,6 @@ export default function FlashcardsPage() {
                 revealed={activeIsHistory || activeRevealed}
                 isHistory={activeIsHistory}
                 canGoForward={activeCanGoForward}
-                onReveal={activeOnReveal}
                 onRate={activeOnRate}
                 onGoForward={activeGoForward}
               />
