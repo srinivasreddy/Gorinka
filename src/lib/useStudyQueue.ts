@@ -69,7 +69,10 @@ export function useStudyQueue() {
   const currentCard = queue[cursor] !== undefined ? cards[queue[cursor]] : null;
   const dueCount = queue.length - frontier;
   const studiedCount = Object.keys(progress).length;
-  const canGoBack = cursor > 0;
+  // Back never dead-ends: at the oldest rated card it wraps to the newest
+  // (live) position instead of disabling, as long as there's anything rated
+  // yet to wrap through.
+  const canGoBack = frontier > 0;
   const canGoForward = isHistory;
 
   // Rates an arbitrary card's SRS progress without touching the due-queue
@@ -90,7 +93,7 @@ export function useStudyQueue() {
   }
 
   function goBack() {
-    setCursor((c) => Math.max(0, c - 1));
+    setCursor((c) => (c === 0 ? frontier : c - 1));
   }
 
   function goForward() {
