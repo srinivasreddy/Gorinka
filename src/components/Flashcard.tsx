@@ -34,20 +34,10 @@ interface FlashcardProps {
   back: string;
   revealed: boolean;
   isHistory: boolean;
-  canGoForward: boolean;
   onRate: (rating: Rating) => void;
-  onGoForward: () => void;
 }
 
-export function Flashcard({
-  front,
-  back,
-  revealed,
-  isHistory,
-  canGoForward,
-  onRate,
-  onGoForward,
-}: FlashcardProps) {
+export function Flashcard({ front, back, revealed, isHistory, onRate }: FlashcardProps) {
   return (
     <Card className="min-h-65">
       <CardContent className="flex h-full flex-col">
@@ -69,16 +59,7 @@ export function Flashcard({
           )}
         </div>
 
-        {isHistory ? (
-          <Button
-            onClick={onGoForward}
-            disabled={!canGoForward}
-            size="lg"
-            className="mt-6 h-11 w-full"
-          >
-            Continue <span className="opacity-60 font-normal">(→)</span>
-          </Button>
-        ) : !revealed ? null : (
+        {!isHistory && revealed && (
           <div className="mt-6 grid grid-cols-4 gap-2">
             {RATINGS.map((rating) => (
               <Button

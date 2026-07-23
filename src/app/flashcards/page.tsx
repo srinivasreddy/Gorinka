@@ -159,9 +159,7 @@ export default function FlashcardsPage() {
                 back={activeCard!.back}
                 revealed={activeIsHistory || activeRevealed}
                 isHistory={activeIsHistory}
-                canGoForward={activeCanGoForward}
                 onRate={activeOnRate}
-                onGoForward={activeGoForward}
               />
             </div>
             <CardNavControls
