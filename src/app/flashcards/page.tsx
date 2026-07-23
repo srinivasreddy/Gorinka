@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Flashcard } from "@/components/Flashcard";
 import { CardSearch } from "@/components/CardSearch";
 import { Button } from "@/components/ui/button";
@@ -90,16 +90,22 @@ export default function FlashcardsPage() {
     onGoForward: activeGoForward,
   });
 
+  // Mirrors the right-arrow keyboard shortcut: reveal, then advance with a
+  // Good rating (or step forward through history) -- shared by the swipe
+  // gesture and the visible nav button below, for mouse/touch users without
+  // a keyboard.
+  function activeAdvance() {
+    if (activeIsHistory) {
+      if (activeCanGoForward) activeGoForward();
+    } else if (!activeRevealed) {
+      activeOnReveal();
+    } else {
+      activeOnRate("good");
+    }
+  }
+
   const swipeHandlers = useSwipeGesture({
-    onSwipeRight: () => {
-      if (activeIsHistory) {
-        if (activeCanGoForward) activeGoForward();
-      } else if (!activeRevealed) {
-        activeOnReveal();
-      } else {
-        activeOnRate("good");
-      }
-    },
+    onSwipeRight: activeAdvance,
     onSwipeLeft: () => {
       if (activeCanGoBack) activeGoBack();
     },
@@ -145,17 +151,39 @@ export default function FlashcardsPage() {
         )}
 
         {isLookup || (!isSearching && currentCard) ? (
-          <div {...swipeHandlers}>
-            <Flashcard
-              front={activeCard!.front}
-              back={activeCard!.back}
-              revealed={activeIsHistory || activeRevealed}
-              isHistory={activeIsHistory}
-              canGoForward={activeCanGoForward}
-              onReveal={activeOnReveal}
-              onRate={activeOnRate}
-              onGoForward={activeGoForward}
-            />
+          <div>
+            <div {...swipeHandlers}>
+              <Flashcard
+                front={activeCard!.front}
+                back={activeCard!.back}
+                revealed={activeIsHistory || activeRevealed}
+                isHistory={activeIsHistory}
+                canGoForward={activeCanGoForward}
+                onReveal={activeOnReveal}
+                onRate={activeOnRate}
+                onGoForward={activeGoForward}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={activeGoBack}
+                disabled={!activeCanGoBack}
+                aria-label="Previous card"
+              >
+                <ArrowLeft />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={activeAdvance}
+                disabled={activeIsHistory && !activeCanGoForward}
+                aria-label="Next card"
+              >
+                <ArrowRight />
+              </Button>
+            </div>
           </div>
         ) : !isSearching ? (
           <Card>
