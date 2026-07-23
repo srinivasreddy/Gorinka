@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Flashcard } from "@/components/Flashcard";
 import { CardSearch } from "@/components/CardSearch";
+import { CardNavControls } from "@/components/CardNavControls";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStudyQueue } from "@/lib/useStudyQueue";
@@ -163,26 +164,12 @@ export default function FlashcardsPage() {
                 onGoForward={activeGoForward}
               />
             </div>
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={activeGoBack}
-                disabled={!activeCanGoBack}
-                aria-label="Previous card"
-              >
-                <ArrowLeft />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={activeAdvance}
-                disabled={activeIsHistory && !activeCanGoForward}
-                aria-label="Next card"
-              >
-                <ArrowRight />
-              </Button>
-            </div>
+            <CardNavControls
+              canGoBack={activeCanGoBack}
+              canGoForward={!activeIsHistory || activeCanGoForward}
+              onBack={activeGoBack}
+              onForward={activeAdvance}
+            />
           </div>
         ) : !isSearching ? (
           <Card>
