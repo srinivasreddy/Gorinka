@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { cards, stripHtml, type Card } from "@/lib/cards";
+import { stripHtml, type Card } from "@/lib/cards";
 
-export function useCardSearch(query: string): Card[] {
+export function useCardSearch(query: string, cards: Card[]): Card[] {
   return useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -12,5 +12,5 @@ export function useCardSearch(query: string): Card[] {
         stripHtml(card.front).toLowerCase().includes(q) ||
         stripHtml(card.back).toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, cards]);
 }

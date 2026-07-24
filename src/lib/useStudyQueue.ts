@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cards } from "@/lib/cards";
 import { isDue, loadProgress, saveProgress, schedule, type CardProgress, type Rating } from "@/lib/srs";
 import type { Card } from "@/lib/cards";
 
 export type { Card } from "@/lib/cards";
-
-const STUDY_QUEUE_KEY = ["study-queue"] as const;
 
 function shuffled(indices: number[]): number[] {
   const result = [...indices];
@@ -26,7 +23,7 @@ interface LoadedState {
 
 // localStorage doesn't exist during SSR, so this can only run client-side,
 // as a query — not read directly during initial render.
-function loadStudyQueue(): LoadedState {
+function loadStudyQueue(cards: Card[]): LoadedState {
   const progress = loadProgress();
   const dueIndices = cards
     .map((_, i) => i)
@@ -34,11 +31,12 @@ function loadStudyQueue(): LoadedState {
   return { progress, queue: shuffled(dueIndices) };
 }
 
-export function useStudyQueue() {
+export function useStudyQueue(categorySlug: string, cards: Card[]) {
   const queryClient = useQueryClient();
+  const queryKey = ["study-queue", categorySlug] as const;
   const { data: loaded, isSuccess } = useQuery({
-    queryKey: STUDY_QUEUE_KEY,
-    queryFn: loadStudyQueue,
+    queryKey,
+    queryFn: () => loadStudyQueue(cards),
     staleTime: Infinity,
   });
 
@@ -55,7 +53,7 @@ export function useStudyQueue() {
       return updatedProgress;
     },
     onSuccess: (updatedProgress) => {
-      queryClient.setQueryData(STUDY_QUEUE_KEY, (old: LoadedState | undefined) =>
+      queryClient.setQueryData(queryKey, (old: LoadedState | undefined) =>
         old ? { ...old, progress: updatedProgress } : old
       );
     },
@@ -68,7 +66,10 @@ export function useStudyQueue() {
   const isHistory = cursor < frontier;
   const currentCard = queue[cursor] !== undefined ? cards[queue[cursor]] : null;
   const dueCount = queue.length - frontier;
-  const studiedCount = Object.keys(progress).length;
+  // Cards from *this* category that have ever been rated -- not a global
+  // count across every category, since progress is stored in one shared
+  // localStorage object keyed by card front.
+  const studiedCount = cards.filter((card) => progress[card.front] !== undefined).length;
   // Back never dead-ends: at the oldest rated card it wraps to the newest
   // (live) position instead of disabling, as long as there's anything rated
   // yet to wrap through.

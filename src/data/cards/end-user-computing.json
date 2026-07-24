@@ -1,0 +1,4 @@
+[
+{"front":"Amazon AppStream 2.0","back":"<p>Streams individual desktop applications (not a full desktop) to a browser, fully managed, with automatic scaling of the underlying fleet.</p><p>Exam distinction from WorkSpaces: AppStream 2.0 streams specific applications to users (including external/non-employee users), while WorkSpaces provisions an entire persistent virtual desktop per user.</p>"},
+{"front":"Amazon WorkSpaces","back":"<p>Managed persistent virtual desktop (VDI) service — each user gets a full desktop (Windows or Linux), unlike AppStream 2.0's single-application streaming.</p><p><strong>Exam trigger:</strong> 'provide employees with a full, persistent desktop environment accessible from anywhere' points to WorkSpaces.</p>"}
+]
