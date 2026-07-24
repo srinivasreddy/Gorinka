@@ -52,8 +52,8 @@ export function Flashcard({ front, back, revealed, isHistory, onRate }: Flashcar
             dangerouslySetInnerHTML={{ __html: front }}
           />
           {revealed && (
-            <p
-              className="mt-4 text-base leading-relaxed text-muted-foreground"
+            <div
+              className="mt-4 text-base leading-relaxed text-muted-foreground [&>p]:mt-2.5 [&>p:first-child]:mt-0 [&_li]:mt-1 [&_strong]:font-semibold [&_strong]:text-foreground [&_ul]:mt-2.5 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5"
               dangerouslySetInnerHTML={{ __html: back }}
             />
           )}
