@@ -395,7 +395,7 @@
       {
         "key": "B",
         "text": "Each client creates an IAM role with a trust policy allowing the MSP's AWS account to assume it (optionally requiring an external ID), attaches a permissions policy scoped to only what that client authorizes, and MSP engineers use AWS STS AssumeRole from their own IAM identities to obtain temporary credentials scoped to that role whenever needed."
-        },
+      },
       {
         "key": "C",
         "text": "The MSP creates a single IAM role in its own account with AdministratorAccess and shares that role's credentials with all client accounts to simplify management."
@@ -412,6 +412,678 @@
         "A": "Long-lived IAM access keys directly violate \"must never have long-lived credentials,\" are harder to revoke instantly compared to updating a role's trust policy, and carry ongoing credential-leakage risk.",
         "C": "A single AdministratorAccess role fully controlled by the MSP violates least privilege and \"must never grant itself broader access than authorized\" — the MSP, not each client, would control the permissions, and every client would receive identical, excessive access.",
         "D": "Making the MSP a full member of each client's Organization with a broad SCP is both operationally extreme and gives the MSP far more integration and visibility into the client's environment than a scoped cross-account role requires. SCPs also don't function as a mechanism to grant access to an external account this way — they set maximum permissions within an Organization, not cross-account grants."
+      }
+    }
+  },
+  {
+    "id": "dr-strategy-rto-rpo-warm-standby",
+    "domain": "Disaster Recovery",
+    "scenario": "An e-commerce company's order-processing system currently uses nightly cross-region backups, giving an RTO of several hours and an RPO of about 24 hours. A new business requirement mandates an RTO under 15 minutes and an RPO under 1 minute. However, the company explicitly wants to avoid the cost of running full production capacity simultaneously in two Regions. Which disaster recovery strategy should they adopt?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continue with Backup and Restore, simply taking backups every hour instead of nightly."
+      },
+      {
+        "key": "B",
+        "text": "Adopt Pilot Light: keep only the database continuously replicating in the DR Region, provisioning application servers from scratch during failover."
+      },
+      {
+        "key": "C",
+        "text": "Adopt Warm Standby: run a scaled-down but fully functional copy of the entire application stack in the DR Region at all times, scaling it up on failover."
+      },
+      {
+        "key": "D",
+        "text": "Adopt Multi-Site Active/Active: run full production capacity in both Regions simultaneously, actively serving traffic from both."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Warm Standby's typical RTO (minutes) and RPO (seconds) both comfortably satisfy the sub-15-minute/sub-1-minute targets, and unlike Multi-Site Active/Active it only requires a scaled-down copy running continuously rather than full duplicate production capacity — satisfying the stated cost constraint as well.",
+      "incorrect": {
+        "A": "More frequent backups improve RPO somewhat, but Backup and Restore's RTO is fundamentally hours long because compute must be provisioned from scratch during recovery — no backup frequency change fixes that.",
+        "B": "Pilot Light's RTO is measured in tens of minutes, since application servers must still be provisioned and scaled up from nothing during failover — this risks exceeding the 15-minute target, unlike Warm Standby where app servers are already running, just at reduced capacity.",
+        "D": "Multi-Site Active/Active would comfortably beat the RTO/RPO targets, but it requires running full production capacity in both Regions continuously, directly violating the requirement to avoid that cost."
+      }
+    }
+  },
+  {
+    "id": "gwlb-transparent-firewall-insertion",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company wants to insert a third-party virtual firewall appliance transparently into the traffic path between the internet and its application load balancer, so every inbound packet is inspected before reaching the application. The vendor should not need to build any AWS-specific integration, and the appliance fleet must scale automatically as traffic grows. Which load balancer should front the firewall appliances?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Application Load Balancer (ALB)"
+      },
+      {
+        "key": "B",
+        "text": "Network Load Balancer (NLB)"
+      },
+      {
+        "key": "C",
+        "text": "Gateway Load Balancer (GWLB)"
+      },
+      {
+        "key": "D",
+        "text": "Classic Load Balancer (CLB)"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Gateway Load Balancer is purpose-built for transparently inserting third-party virtual appliances (firewalls, IDS/IPS) inline using GENEVE encapsulation, distributing traffic across an auto-scaled appliance fleet without requiring the vendor to build any AWS-specific integration.",
+      "incorrect": {
+        "A": "ALB operates at Layer 7 and terminates/re-originates HTTP connections — it isn't designed for transparent, protocol-agnostic packet-level appliance insertion.",
+        "B": "NLB is Layer 4 and could front the appliances, but it lacks the GENEVE-based bump-in-the-wire semantics GWLB provides specifically for security-appliance insertion.",
+        "D": "Classic Load Balancer is a legacy offering lacking the capabilities of both ALB and NLB, and isn't used for this appliance-insertion pattern at all."
+      }
+    }
+  },
+  {
+    "id": "s3-access-points-per-team-permissions",
+    "domain": "Storage",
+    "scenario": "A media company has a single S3 bucket shared by 40 internal applications, each needing different permissions to different prefixes. The single bucket policy has grown past 6,000 lines and is frequently the target of accidental permission conflicts when multiple teams edit it. The company wants each application team to manage its own access rules independently, without any team being able to accidentally affect another team's access. What should a solutions architect recommend?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Split the single bucket into 40 separate buckets, one per application."
+      },
+      {
+        "key": "B",
+        "text": "Create an S3 Access Point for each application, each with its own scoped policy and, where useful, restricted to a specific VPC."
+      },
+      {
+        "key": "C",
+        "text": "Use S3 Object Lambda to enforce per-application permissions at read time."
+      },
+      {
+        "key": "D",
+        "text": "Keep a single bucket policy, but split it into 40 separate IAM policies referencing the same bucket ARN."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "S3 Access Points give each application its own named access endpoint with its own scoped policy, letting teams manage access independently without one team's edits risking another's — exactly the delegated, isolated access-management problem described, without migrating any data.",
+      "incorrect": {
+        "A": "Splitting into 40 buckets solves isolation but requires migrating all existing data and reconfiguring every application's endpoint, and loses the benefits of a shared dataset — far more effort than Access Points require.",
+        "C": "Object Lambda transforms object content on retrieval; it isn't an access-control delegation mechanism and doesn't solve the unmanageable-single-policy problem.",
+        "D": "IAM policies attached to identities still ultimately evaluate against the same underlying bucket policy and resource, and don't eliminate the need to reason about one bucket's cross-team effects — Access Points are the AWS feature built specifically for this."
+      }
+    }
+  },
+  {
+    "id": "dynamodb-global-tables-multi-region-writes",
+    "domain": "Database",
+    "scenario": "A gaming company runs a leaderboard service that must accept writes from players in both us-east-1 and eu-west-1 simultaneously, with each Region's writes visible to the other within a couple of seconds. The service needs a schema-flexible key-value model that can scale to millions of writes per second globally. Which database should they choose?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon Aurora Global Database"
+      },
+      {
+        "key": "B",
+        "text": "Amazon RDS Multi-AZ"
+      },
+      {
+        "key": "C",
+        "text": "Amazon DynamoDB Global Tables"
+      },
+      {
+        "key": "D",
+        "text": "Amazon ElastiCache with cross-region replication"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "DynamoDB Global Tables provide multi-Region, multi-active replication: every Region can accept writes simultaneously, with changes propagating to other Regions typically within seconds, and DynamoDB's schema-flexible key-value model natively scales to very high write throughput.",
+      "incorrect": {
+        "A": "Aurora Global Database's secondary Regions are read-only by default under one primary writer Region — it doesn't provide the same simultaneous multi-Region active-active write model DynamoDB Global Tables offers.",
+        "B": "RDS Multi-AZ is single-Region high availability, not multi-Region, and provides no multi-Region write capability at all.",
+        "D": "ElastiCache is a cache, not a durable system-of-record data store, and isn't designed to be the primary multi-region-write data store for leaderboard data."
+      }
+    }
+  },
+  {
+    "id": "api-gateway-usage-plans-per-customer-throttling",
+    "domain": "Application Integration",
+    "scenario": "A SaaS company exposes a public API through Amazon API Gateway to external customers on different subscription tiers. They need to limit each customer to a specific request rate based on their tier, and identify which customer is calling for billing purposes, without requiring customers to share a network location with the provider. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A single AWS WAF rate-based rule limiting all traffic to the API globally."
+      },
+      {
+        "key": "B",
+        "text": "Separate VPCs per customer with security-group-based rate limiting."
+      },
+      {
+        "key": "C",
+        "text": "API Gateway usage plans, each associated with per-customer API keys."
+      },
+      {
+        "key": "D",
+        "text": "Route each customer's traffic through a separate Network Load Balancer with connection limits."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Usage plans define per-consumer rate limits and quotas, and API keys identify which customer is calling and tie them to a specific plan — exactly the mechanism for enforcing different, per-customer request limits and attributing usage for billing.",
+      "incorrect": {
+        "A": "A single global WAF rate-based rule throttles all traffic together; it can't distinguish between customers on different tiers or attribute usage per customer.",
+        "B": "Customers are external SaaS consumers, not deployed inside the provider's VPC — this doesn't apply, and security groups don't perform per-customer application-level request throttling anyway.",
+        "D": "NLB connection limits operate at the network/connection level, not per-authenticated-customer request rate, and can't achieve tiered per-customer throttling tied to billing identity."
+      }
+    }
+  },
+  {
+    "id": "step-functions-express-high-volume-iot",
+    "domain": "Application Integration",
+    "scenario": "A company processes millions of short-lived IoT sensor events per day, each requiring a simple three-step workflow (validate, transform, store) that completes in under a second. Occasional duplicate processing of an event is acceptable because the storage step is idempotent, and cost per execution is the primary concern given the massive volume. Which Step Functions workflow type should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Standard workflow"
+      },
+      {
+        "key": "B",
+        "text": "Express workflow"
+      },
+      {
+        "key": "C",
+        "text": "A single Lambda function with no Step Functions at all"
+      },
+      {
+        "key": "D",
+        "text": "Standard workflow with a shorter execution timeout configured"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Express workflows are priced by execution count and duration/memory rather than per state transition, making them dramatically cheaper at this volume, and they guarantee only at-least-once execution — acceptable here since the storage step is idempotent — well within their 5-minute cap.",
+      "incorrect": {
+        "A": "Standard workflows are priced per state transition, which becomes expensive at millions of executions a day for a multi-step workflow, and its exactly-once guarantee is unneeded overhead given the idempotent storage step.",
+        "C": "A single Lambda function could technically run this logic, but loses the built-in state visualization, retry, and error handling Step Functions provides for a defined multi-step workflow — the exam expects Step Functions for a described multi-step process.",
+        "D": "Shortening a Standard workflow's timeout doesn't change its per-state-transition pricing model, so it doesn't address the cost problem at this volume."
+      }
+    }
+  },
+  {
+    "id": "cloudfront-signed-urls-per-video-access",
+    "domain": "Content Delivery",
+    "scenario": "A video streaming company wants to serve premium content through CloudFront only to logged-in, paying subscribers, blocking free-tier users even if they discover a CloudFront URL directly. Each subscriber only ever needs access to the handful of videos they've individually purchased. What is the best mechanism?",
+    "options": [
+      {
+        "key": "A",
+        "text": "CloudFront signed cookies"
+      },
+      {
+        "key": "B",
+        "text": "CloudFront signed URLs"
+      },
+      {
+        "key": "C",
+        "text": "A public S3 bucket policy allowing GetObject to any authenticated AWS user"
+      },
+      {
+        "key": "D",
+        "text": "An AWS WAF geo-blocking rule"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Signed URLs grant time-limited access to one specific file at a time, which fits a subscriber who only needs access to a handful of individually purchased videos — the minimal-blast-radius choice for per-object entitlements.",
+      "incorrect": {
+        "A": "Signed cookies are the better fit when a viewer needs access to many files under one grant (e.g. an entire catalog) without re-signing each URL — here, subscribers need only a handful of specific videos, which signed URLs handle more precisely.",
+        "C": "A policy granting access to any authenticated AWS user would require every viewer to hold an AWS IAM identity, which end consumers of a streaming service don't have — this isn't how consumer content restriction works.",
+        "D": "Geo-blocking restricts by location, not by subscription or payment status, and doesn't address the actual requirement."
+      }
+    }
+  },
+  {
+    "id": "ec2-cluster-placement-group-hpc",
+    "domain": "Compute",
+    "scenario": "A financial services company runs a tightly-coupled computational fluid dynamics simulation across 50 EC2 instances that constantly exchange data with each other, and the primary bottleneck is inter-instance network latency. Which placement strategy should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Spread placement group"
+      },
+      {
+        "key": "B",
+        "text": "Partition placement group"
+      },
+      {
+        "key": "C",
+        "text": "Cluster placement group"
+      },
+      {
+        "key": "D",
+        "text": "No placement group; rely on Auto Scaling across multiple Availability Zones"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Cluster placement groups pack instances physically close together within a single Availability Zone specifically to minimize inter-instance network latency — exactly the tightly-coupled HPC use case described.",
+      "incorrect": {
+        "A": "Spread placement groups intentionally place instances on distinct underlying hardware to minimize simultaneous failure risk, which increases inter-instance latency — the opposite of what's needed here.",
+        "B": "Partition placement groups isolate groups of instances from each other for fault isolation (used by distributed systems like Hadoop/Cassandra) — they don't focus on minimizing latency between every instance.",
+        "D": "Spreading instances across multiple AZs would significantly increase inter-instance latency from inter-AZ network hops, working directly against the stated bottleneck."
+      }
+    }
+  },
+  {
+    "id": "vpc-gateway-endpoint-free-s3-access",
+    "domain": "Networking & Connectivity",
+    "scenario": "An application running on EC2 instances in a private subnet reads and writes large volumes of data to an S3 bucket in the same Region. The company wants to avoid all data-transfer and per-hour endpoint charges for this traffic while keeping it off the public internet entirely. What should they configure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A NAT Gateway in a public subnet, with a route from the private subnet"
+      },
+      {
+        "key": "B",
+        "text": "An Interface VPC endpoint for S3"
+      },
+      {
+        "key": "C",
+        "text": "A Gateway VPC endpoint for S3"
+      },
+      {
+        "key": "D",
+        "text": "An AWS PrivateLink connection to a partner service"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Gateway endpoints for S3 (and DynamoDB) carry no hourly or per-GB charge and keep traffic entirely on AWS's network via a route table entry — exactly matching the requirement to avoid all charges while staying off the public internet.",
+      "incorrect": {
+        "A": "A NAT Gateway would route traffic out to S3's public endpoint over the internet path and incurs its own hourly plus per-GB data-processing charges — it fails both the cost and off-internet requirements.",
+        "B": "Interface endpoints keep traffic private but are ENI-based and incur hourly plus per-GB charges — Gateway endpoints are the free option specifically for S3 and DynamoDB.",
+        "D": "PrivateLink is the general mechanism behind interface endpoints to partner/custom services — unnecessary and not free, when a Gateway endpoint already solves this exact S3 case at no cost."
+      }
+    }
+  },
+  {
+    "id": "well-architected-cost-pillar-unused-commitments",
+    "domain": "Cost Optimization",
+    "scenario": "During a Well-Architected Framework review, a team finds that a stable, predictable production workload has run on On-Demand EC2 pricing for two years with no Reserved Instances or Savings Plans in place, despite consistent, unchanging usage — resulting in significantly higher spend than necessary with no corresponding benefit. Which pillar does this finding primarily relate to?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Reliability"
+      },
+      {
+        "key": "B",
+        "text": "Performance Efficiency"
+      },
+      {
+        "key": "C",
+        "text": "Cost Optimization"
+      },
+      {
+        "key": "D",
+        "text": "Operational Excellence"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Failing to use commitment-based discounts (Reserved Instances/Savings Plans) for stable, predictable usage is a pure spend-avoidance issue with no complexity or performance dimension — squarely a Cost Optimization pillar finding.",
+      "incorrect": {
+        "A": "Reliability concerns recovering from failures and meeting demand — this finding is about unnecessary spend, not failure recovery.",
+        "B": "Performance Efficiency is about matching resource type/sizing to workload needs — this finding involves no resource-type or sizing issue, purely a pricing-model choice.",
+        "D": "Operational Excellence concerns running, monitoring, and improving operational processes — this finding is a purchasing decision, not a process gap."
+      }
+    }
+  },
+  {
+    "id": "cost-anomaly-detection-vs-budgets",
+    "domain": "Cost Optimization",
+    "scenario": "A company wants to be automatically alerted whenever spending on any AWS service deviates unexpectedly from its normal historical pattern, without manually defining specific dollar thresholds for every service in advance, since new services are added to their environment regularly. Which tool should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Budgets"
+      },
+      {
+        "key": "B",
+        "text": "AWS Cost Explorer"
+      },
+      {
+        "key": "C",
+        "text": "AWS Cost Anomaly Detection"
+      },
+      {
+        "key": "D",
+        "text": "AWS Cost and Usage Report (CUR)"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Cost Anomaly Detection uses machine learning to learn each service's normal spending pattern automatically and alerts on unexpected deviations, with no need to manually predefine thresholds per service — including new services added later.",
+      "incorrect": {
+        "A": "Budgets requires manually defining a specific threshold per budget; it doesn't automatically adapt to what's 'normal' or automatically cover newly added services without configuration.",
+        "B": "Cost Explorer is retrospective, manual analysis — someone has to go look for anomalies; it doesn't proactively alert on its own.",
+        "D": "CUR is raw line-item billing data meant for custom analysis, not an alerting mechanism at all."
+      }
+    }
+  },
+  {
+    "id": "savings-plan-org-sharing-opt-out",
+    "domain": "Cost Optimization",
+    "scenario": "A company's finance team purchased a large Compute Savings Plan in the Organization's management account expecting it to reduce costs across all member accounts. Two months later they notice one specific member account's EC2 costs remain at full On-Demand rates while every other account shows the expected discount. What is the most likely explanation?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Savings Plans can only ever apply to the account that purchased them, and the finance team misunderstood how they work."
+      },
+      {
+        "key": "B",
+        "text": "That specific member account has disabled Savings Plan sharing for itself, opting out of Organization-wide sharing."
+      },
+      {
+        "key": "C",
+        "text": "Compute Savings Plans do not apply to EC2 usage at all, only to Fargate and Lambda."
+      },
+      {
+        "key": "D",
+        "text": "The Savings Plan has already been fully consumed by other accounts and no capacity remains."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Savings Plans and RIs are shared org-wide by default via consolidated billing, but an individual member account can opt out of receiving shared benefit — this is the standard explanation for one account seeing full On-Demand rates while every other account gets the discount.",
+      "incorrect": {
+        "A": "Savings Plans and RIs are shared across an Organization by default — the opposite of this claim — which is the common misconception this option is testing.",
+        "C": "Compute Savings Plans do apply to EC2 (as well as Fargate and Lambda) — this option states something false about the service.",
+        "D": "Savings Plans provide a discount on usage up to a committed spend rate rather than a finite consumable 'capacity'; even if the commitment were fully applied elsewhere, the excluded account would still get its own On-Demand rate for its usage rather than zero discount specifically because others 'used it up.'"
+      }
+    }
+  },
+  {
+    "id": "config-conformance-packs-auto-remediation",
+    "domain": "Governance & Compliance",
+    "scenario": "A company has deployed AWS Config rules individually across each of its 30 AWS accounts to check for a specific compliance standard. Keeping the rules consistent as the standard evolves has become a significant manual burden, and when a non-compliant resource is found, an engineer must manually intervene to fix it every time. What should a solutions architect recommend to reduce this operational burden?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Migrate all Config rules to Amazon EventBridge rules instead."
+      },
+      {
+        "key": "B",
+        "text": "Package the Config rules into a conformance pack deployed across the Organization, with SSM Automation documents attached for auto-remediation."
+      },
+      {
+        "key": "C",
+        "text": "Replace AWS Config entirely with a third-party compliance scanning tool."
+      },
+      {
+        "key": "D",
+        "text": "Consolidate all 30 accounts into a single account to simplify rule management."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Conformance packs bundle and version Config rules for consistent, one-step Organization-wide deployment, and attaching SSM Automation documents enables automatic remediation without manual intervention — directly addressing both stated pain points.",
+      "incorrect": {
+        "A": "EventBridge is not a compliance-rule engine; migrating to it addresses neither rule consistency nor auto-remediation.",
+        "C": "Replacing Config entirely is a far larger, unnecessary change when Config's own conformance pack and remediation features already solve the exact problem described.",
+        "D": "Consolidating 30 accounts into one is an extreme, high-risk restructuring that eliminates the security and blast-radius benefits of multi-account separation — not a reasonable response to a rule-management problem."
+      }
+    }
+  },
+  {
+    "id": "backup-vault-lock-compliance-mode-ransomware",
+    "domain": "Data Protection",
+    "scenario": "A healthcare company must retain patient record backups for 7 years under a regulatory requirement. A recent internal audit flagged a risk: a compromised administrator credential could currently delete these backups before their retention period expires. The company needs this to be provably impossible, even for their own administrators, without waiting for a new audit cycle. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Multi-factor authentication (MFA) on all administrator accounts."
+      },
+      {
+        "key": "B",
+        "text": "AWS Backup Vault Lock in compliance mode."
+      },
+      {
+        "key": "C",
+        "text": "AWS Backup Vault Lock in governance mode."
+      },
+      {
+        "key": "D",
+        "text": "A service control policy (SCP) denying backup:DeleteRecoveryPoint for all users."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Compliance mode makes a Vault Lock policy irreversible, even for the account root user or AWS itself, providing the 'provably impossible, even for our own administrators' guarantee the audit requires.",
+      "incorrect": {
+        "A": "MFA reduces the risk of credential compromise but doesn't make deletion provably impossible for a legitimate or compromised-but-authenticated administrator — it's a preventive access control, not an enforcement guarantee on the backups themselves.",
+        "C": "Governance mode still allows sufficiently privileged users to remove or override the lock, so it doesn't provide the same irreversible guarantee compliance mode does.",
+        "D": "An SCP denying delete actions could, in principle, still be modified or removed by someone with sufficient Organizations-level permissions — it isn't the purpose-built, irreversible compliance guarantee Vault Lock's compliance mode specifically provides."
+      }
+    }
+  },
+  {
+    "id": "compute-optimizer-detailed-rightsizing",
+    "domain": "Operational Excellence",
+    "scenario": "An operations team wants a detailed, data-driven recommendation for the ideal EC2 instance type and size for each of 200 running instances, based on actual historical CPU, memory, and network utilization patterns over the past two weeks. Which service should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Trusted Advisor"
+      },
+      {
+        "key": "B",
+        "text": "AWS Compute Optimizer"
+      },
+      {
+        "key": "C",
+        "text": "Amazon CloudWatch dashboards"
+      },
+      {
+        "key": "D",
+        "text": "AWS Config"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Compute Optimizer is the purpose-built, ML-driven rightsizing recommendation engine that analyzes CPU, memory, and network utilization history to recommend specific instance types and sizes.",
+      "incorrect": {
+        "A": "Trusted Advisor provides broader best-practice checks, including some cost checks, but not the same depth of per-instance utilization-driven rightsizing analysis, and its fuller check set is gated by support plan tier.",
+        "C": "CloudWatch dashboards expose the raw metrics but require manual analysis and decision-making — there's no automated recommendation engine behind them.",
+        "D": "AWS Config checks resource configuration against compliance rules, not performance or utilization-based sizing recommendations."
+      }
+    }
+  },
+  {
+    "id": "xray-microservices-latency-bottleneck",
+    "domain": "Operational Excellence",
+    "scenario": "A company's microservices application — composed of API Gateway, several Lambda functions, and a downstream DynamoDB table — has recently started experiencing intermittent high latency for end users, but the team cannot determine which specific service in the request chain is responsible. Which service should they use to pinpoint the bottleneck?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon CloudWatch Logs Insights"
+      },
+      {
+        "key": "B",
+        "text": "AWS X-Ray"
+      },
+      {
+        "key": "C",
+        "text": "Amazon CloudWatch Alarms"
+      },
+      {
+        "key": "D",
+        "text": "AWS CloudTrail"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "X-Ray traces individual requests end-to-end across the full microservices chain and visualizes exactly where time is spent via a service map — precisely what's needed to isolate which specific component is causing the latency.",
+      "incorrect": {
+        "A": "Logs Insights can query each service's logs individually, but doesn't automatically correlate a single request's journey across multiple services the way X-Ray's distributed tracing does.",
+        "C": "CloudWatch Alarms only notify when a metric crosses a threshold; they don't diagnose where in a request chain the latency originates.",
+        "D": "CloudTrail records API management-plane activity — who changed what — not application request latency or tracing, and is unrelated to this troubleshooting need."
+      }
+    }
+  },
+  {
+    "id": "migration-6rs-repurchase-saas",
+    "domain": "Migration Strategy",
+    "scenario": "A company runs a 15-year-old on-premises inventory management application built on a discontinued vendor platform that is no longer actively maintained or supported. An equivalent, fully-featured cloud-based SaaS inventory management product already exists on the market, meeting all current requirements at a lower total cost than maintaining or re-architecting the legacy application. Which of the 6 R's migration strategies best fits this situation?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Rehost"
+      },
+      {
+        "key": "B",
+        "text": "Replatform"
+      },
+      {
+        "key": "C",
+        "text": "Repurchase"
+      },
+      {
+        "key": "D",
+        "text": "Refactor"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Repurchase means switching to a different product, typically an existing SaaS replacement, which is exactly what's described — a SaaS product that meets the need better and cheaper than migrating or rebuilding the legacy application at all.",
+      "incorrect": {
+        "A": "Rehost ('lift and shift') would move the legacy, unsupported application as-is to AWS, but the available SaaS alternative is a better fit than continuing to run unsupported legacy software anywhere, even in the cloud.",
+        "B": "Replatform makes targeted optimizations to the existing application (such as swapping its database) — but the application runs on a discontinued, unmaintained platform, making incremental optimization impractical.",
+        "D": "Refactor means re-architecting the application to be cloud-native — a much larger investment than needed when an existing SaaS product already solves the problem outright."
+      }
+    }
+  },
+  {
+    "id": "dms-sct-heterogeneous-oracle-aurora",
+    "domain": "Migration Strategy",
+    "scenario": "A company needs to migrate its production database from on-premises Oracle to Amazon Aurora PostgreSQL, including all custom stored procedures and triggers, with minimal application downtime during cutover. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS DMS alone, to migrate schema, code, and data all in one step."
+      },
+      {
+        "key": "B",
+        "text": "AWS SCT to convert schema and code first, then AWS DMS to perform ongoing data replication and final cutover."
+      },
+      {
+        "key": "C",
+        "text": "AWS DataSync to copy the database files directly to Aurora."
+      },
+      {
+        "key": "D",
+        "text": "Export the Oracle database to CSV files and import them into Aurora PostgreSQL using the COPY command."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This is the standard heterogeneous migration pairing: SCT converts schema and code — including stored procedures and triggers that differ between source and target engines — while DMS performs continuous change-data-capture replication for a minimal-downtime cutover.",
+      "incorrect": {
+        "A": "DMS migrates data only, not schema or code logic like stored procedures and triggers; for heterogeneous migrations between different database engines it must be paired with SCT first.",
+        "C": "DataSync is for file and object data transfer (e.g. NFS/SMB to S3/EFS), not database engine migration with schema conversion — the wrong tool entirely for this use case.",
+        "D": "A manual CSV export/import loses all stored procedures and triggers, which aren't captured in a data-only export, and would require significant downtime during the full export/import window — failing both stated requirements."
+      }
+    }
+  },
+  {
+    "id": "fargate-spot-batch-cost-optimization",
+    "domain": "Cost Optimization",
+    "scenario": "A media company runs a containerized video transcoding batch job on Amazon ECS with AWS Fargate, processing a queue of videos throughout the day. Individual transcoding jobs can safely restart from the beginning if interrupted, and the company wants to reduce compute costs for this workload as much as possible without changing container images or application code. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Switch the ECS service to use the EC2 launch type instead of Fargate."
+      },
+      {
+        "key": "B",
+        "text": "Configure the ECS service to use a Fargate Spot capacity provider strategy alongside standard Fargate."
+      },
+      {
+        "key": "C",
+        "text": "Move the workload to AWS Lambda instead."
+      },
+      {
+        "key": "D",
+        "text": "Purchase a Compute Savings Plan committing to 3 years of steady Fargate usage."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Fargate Spot offers up to roughly a 70% discount for interruptible workloads like this restart-tolerant transcoding job, without any change to container images or code, and a capacity provider strategy can blend Spot with standard Fargate for resilience.",
+      "incorrect": {
+        "A": "Switching to EC2 launch type reintroduces server and cluster management that Fargate was chosen to avoid, and doesn't inherently guarantee a lower cost than Fargate Spot for this workload.",
+        "C": "Moving to Lambda would require re-architecting the application around Lambda's execution model and limits (e.g. a 15-minute maximum duration), violating the 'without changing application code' requirement, and video transcoding jobs often exceed Lambda's constraints.",
+        "D": "A Savings Plan requires a long-term steady-usage commitment and offers a smaller discount than Spot for a workload that is explicitly interruptible and restart-tolerant — Spot is the better fit given the stated fault tolerance."
+      }
+    }
+  },
+  {
+    "id": "snow-family-petabyte-migration-bandwidth",
+    "domain": "Migration Strategy",
+    "scenario": "A research institution needs to migrate 2 petabytes of existing data from an on-premises data center to Amazon S3. Their available internet connection provides 100 Mbps of usable bandwidth, and calculations show that transferring the full dataset over this connection would take several months. What should they use instead?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS DataSync over the existing internet connection."
+      },
+      {
+        "key": "B",
+        "text": "AWS Snowball Edge devices (or AWS Snowmobile, depending on final data volume assessment)."
+      },
+      {
+        "key": "C",
+        "text": "Amazon S3 Transfer Acceleration."
+      },
+      {
+        "key": "D",
+        "text": "AWS Direct Connect with a new 1 Gbps dedicated connection."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "When transferring data over the network would take weeks or months, a physical Snow Family device is the answer; at petabyte scale, a fleet of Snowball Edge devices (or, historically, Snowmobile at exabyte scale) moves the data far faster by physically shipping storage rather than sending it over a constrained link.",
+      "incorrect": {
+        "A": "DataSync accelerates transfers over an existing network connection but is still bound by that connection's bandwidth — it doesn't solve a fundamental 'the pipe is too small for this volume in a reasonable time' problem.",
+        "C": "S3 Transfer Acceleration speeds transfers by routing through CloudFront edge locations, but still depends on the underlying 100 Mbps connection — it doesn't fundamentally change a months-long timeline.",
+        "D": "Provisioning a new Direct Connect connection takes significant lead time (often weeks) to establish and is a recurring infrastructure commitment — a heavier, slower-to-provision solution than shipping a Snow device for a one-time bulk transfer."
+      }
+    }
+  },
+  {
+    "id": "cdk-vs-cloudformation-programmatic-iac",
+    "domain": "Developer Tools & IaC",
+    "scenario": "A development team wants to define their infrastructure as code, but finds hand-writing repetitive CloudFormation YAML for dozens of near-identical microservice stacks time-consuming and error-prone. They would prefer to use loops, conditionals, and reusable functions in a programming language the team already knows (TypeScript) to generate that infrastructure, while still retaining CloudFormation's stack management, rollback, and drift detection underneath. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS OpsWorks"
+      },
+      {
+        "key": "B",
+        "text": "AWS CDK"
+      },
+      {
+        "key": "C",
+        "text": "AWS Elastic Beanstalk"
+      },
+      {
+        "key": "D",
+        "text": "Terraform"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "CDK lets teams define infrastructure in TypeScript (or other general-purpose languages) using full programming constructs — loops, conditionals, reusable constructs — synthesizing down to standard CloudFormation templates, so it still gets CloudFormation's own stack management, rollback, and drift detection.",
+      "incorrect": {
+        "A": "OpsWorks is a configuration management service (Chef/Puppet-based), not an infrastructure-as-code templating tool matching this need.",
+        "C": "Elastic Beanstalk is a PaaS for deploying applications, not a general infrastructure-as-code authoring tool with programming-language constructs.",
+        "D": "Terraform could achieve similar programmatic IaC goals, but it isn't natively CloudFormation-based — it uses its own state file and engine, not CloudFormation stacks — while the requirement is specifically to retain CloudFormation's own stack management underneath, which only CDK provides."
       }
     }
   }
