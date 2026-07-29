@@ -1,4 +1,8 @@
-import { loadProgressFromSqlite, saveProgressToSqlite } from "@/lib/sqlite";
+import {
+  loadProgressFromSqlite,
+  saveProgressToSqlite,
+  clearProgressForFrontsInSqlite,
+} from "@/lib/sqlite";
 
 export type Rating = "again" | "hard" | "good" | "easy";
 
@@ -22,6 +26,10 @@ export async function loadProgress(): Promise<ProgressMap> {
 
 export async function saveProgress(progress: ProgressMap): Promise<void> {
   await saveProgressToSqlite(progress);
+}
+
+export async function clearProgressForFronts(fronts: string[]): Promise<void> {
+  await clearProgressForFrontsInSqlite(fronts);
 }
 
 export function isDue(progress: CardProgress | undefined, now = Date.now()): boolean {

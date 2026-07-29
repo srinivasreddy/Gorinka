@@ -40,3 +40,35 @@ test("rating a card persists across a reload", async ({ page }) => {
 
   expect(consoleErrors, `Console errors: ${consoleErrors.join("\n")}`).toEqual([]);
 });
+
+test("resetting a finished category makes all its cards due again", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (msg) => {
+    if (msg.type() === "error") consoleErrors.push(msg.text());
+  });
+  page.on("pageerror", (err) => consoleErrors.push(err.message));
+
+  // End User Computing has only 2 cards, so it's the fastest category to
+  // exhaust and hit the "No cards due right now" empty state.
+  await page.goto("/flashcards/end-user-computing");
+
+  const status = page.getByText(/\d+ studied/);
+  await expect(status).toHaveText(/2 due . 0 studied/);
+
+  const nextButton = page.getByRole("button", { name: "Next card" });
+  await nextButton.click(); // reveal card 1
+  await nextButton.click(); // rate card 1 Good
+  await nextButton.click(); // reveal card 2
+  await nextButton.click(); // rate card 2 Good
+
+  await expect(page.getByText("No cards due right now.")).toBeVisible();
+  await expect(status).toHaveText(/2 studied/);
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: /Reset progress for/ }).click();
+
+  await expect(status).toHaveText(/2 due . 0 studied/);
+  await expect(page.getByText("No cards due right now.")).not.toBeVisible();
+
+  expect(consoleErrors, `Console errors: ${consoleErrors.join("\n")}`).toEqual([]);
+});

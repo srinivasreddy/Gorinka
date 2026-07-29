@@ -117,3 +117,20 @@ export async function saveProgressToSqlite(
   const idb = await getIdb();
   await persist(db, idb);
 }
+
+// Deletes progress rows for exactly the given card fronts (e.g. one
+// category's cards), leaving every other category's progress untouched.
+export async function clearProgressForFrontsInSqlite(fronts: string[]): Promise<void> {
+  if (fronts.length === 0) return;
+  const db = await getDatabase();
+  const stmt = db.prepare("DELETE FROM progress WHERE front = ?");
+  try {
+    for (const front of fronts) {
+      stmt.run([front]);
+    }
+  } finally {
+    stmt.free();
+  }
+  const idb = await getIdb();
+  await persist(db, idb);
+}

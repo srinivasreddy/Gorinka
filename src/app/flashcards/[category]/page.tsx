@@ -35,6 +35,7 @@ export default function CategoryFlashcardsPage() {
     rateCard,
     goBack,
     goForward,
+    resetCategory,
   } = useStudyQueue(slug, cards);
   const [revealed, setRevealed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -222,8 +223,24 @@ export default function CategoryFlashcardsPage() {
             <CardContent className="text-center">
               <p className="font-medium text-foreground">No cards due right now.</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Come back later, or clear your browser storage to restart.
+                Come back later, or reset this category&apos;s progress to restart it.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Reset all progress for "${category.title}"? This can't be undone.`
+                    )
+                  ) {
+                    resetCategory();
+                  }
+                }}
+              >
+                Reset progress for {category.title}
+              </Button>
             </CardContent>
           </Card>
         ) : null}

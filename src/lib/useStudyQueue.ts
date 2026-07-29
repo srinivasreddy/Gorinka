@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { isDue, loadProgress, saveProgress, schedule, type CardProgress, type Rating } from "@/lib/srs";
+import {
+  isDue,
+  loadProgress,
+  saveProgress,
+  clearProgressForFronts,
+  schedule,
+  type CardProgress,
+  type Rating,
+} from "@/lib/srs";
 import type { Card } from "@/lib/cards";
 
 export type { Card } from "@/lib/cards";
@@ -101,6 +109,20 @@ export function useStudyQueue(categorySlug: string, cards: Card[]) {
     setCursor((c) => Math.min(frontier, c + 1));
   }
 
+  // Wipes this category's progress only -- every other category's SRS data
+  // is untouched, since it's stored under different card fronts in the same
+  // shared SQLite table. Immediately makes every card in the category due
+  // again, in a fresh shuffle.
+  async function resetCategory() {
+    await clearProgressForFronts(cards.map((card) => card.front));
+    const newProgress = { ...progress };
+    for (const card of cards) delete newProgress[card.front];
+    const newQueue = shuffled(cards.map((_, i) => i));
+    queryClient.setQueryData(queryKey, { progress: newProgress, queue: newQueue });
+    setFrontier(0);
+    setCursor(0);
+  }
+
   return {
     ready,
     currentCard,
@@ -113,5 +135,6 @@ export function useStudyQueue(categorySlug: string, cards: Card[]) {
     rateCard,
     goBack,
     goForward,
+    resetCategory,
   };
 }
