@@ -1598,5 +1598,1605 @@
         "D": "Delaying the data center exit isn't viable given a fixed exit deadline (often driven by an expiring lease or contract) — the company needs a migration approach that fits the existing timeline, which VMware Cloud on AWS provides."
       }
     }
+  },
+  {
+    "id": "ram-share-transit-gateway-org-wide",
+    "domain": "Networking & Connectivity",
+    "scenario": "A platform team manages a central Transit Gateway in a Network account, and wants every one of 60 application accounts across the Organization to attach their own VPCs to it, without the Network team needing to manually accept each attachment request or grant broad cross-account permissions. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually share the Transit Gateway ID with each account team and have them submit attachment requests for manual approval."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Resource Access Manager (RAM) to share the Transit Gateway with the entire Organization (or specific OUs), enabling automatic attachment acceptance for accounts within the Organization."
+      },
+      {
+        "key": "C",
+        "text": "Create a separate Transit Gateway per application account and peer them all together."
+      },
+      {
+        "key": "D",
+        "text": "Grant each application account's IAM users AdministratorAccess in the Network account so they can create their own attachments directly."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "RAM lets you share a Transit Gateway across an Organization (or specific OUs), and when shared within the same Organization, attachments can be automatically accepted without manual approval per account — exactly matching the scale and no-manual-review requirement.",
+      "incorrect": {
+        "A": "Manual approval for 60 accounts is exactly the operational burden RAM's organization-wide auto-accept sharing eliminates — it doesn't scale.",
+        "C": "A separate Transit Gateway per account defeats the purpose of centralizing connectivity and reintroduces the same N:N peering complexity Transit Gateway exists to avoid.",
+        "D": "Granting AdministratorAccess in the Network account is a massive, unnecessary security exposure — RAM's resource sharing avoids ever granting broad account-level access at all."
+      }
+    }
+  },
+  {
+    "id": "scp-baseline-fullawsaccess-deny-list",
+    "domain": "Governance & Compliance",
+    "scenario": "A newly formed cloud governance team wants to apply guardrails across their AWS Organization such that all accounts retain full access to AWS services by default, to avoid breaking existing workloads, while specifically blocking a small, well-defined set of dangerous actions (for example, disabling GuardDuty, or leaving a specific Region). What SCP strategy should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Attach an SCP to every OU that explicitly allows only the specific set of actions each account is known to need today."
+      },
+      {
+        "key": "B",
+        "text": "Keep the default FullAWSAccess SCP attached, and additionally attach a deny-list SCP that explicitly denies only the specific dangerous actions identified."
+      },
+      {
+        "key": "C",
+        "text": "Detach the default FullAWSAccess SCP from every OU, since SCPs should always start from zero access."
+      },
+      {
+        "key": "D",
+        "text": "Create a single SCP with an explicit Allow listed individually for every AWS action except the ones to be blocked."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This is the deny-list strategy: keep FullAWSAccess as the baseline so nothing that already works breaks, and layer a targeted deny SCP for specific dangerous actions — the standard, low-risk approach for guardrails without inventorying every legitimate action in advance.",
+      "incorrect": {
+        "A": "An allow-list SCP requires enumerating every action every account needs today, which is fragile and likely to break existing workloads that rely on actions the governance team didn't think to include.",
+        "C": "Removing FullAWSAccess without an explicit replacement allow policy leaves accounts with effectively no permissions granted by SCP, breaking every workload immediately.",
+        "D": "Enumerating every AWS action except a handful to block isn't how SCPs are practically authored — this describes an impractical approach compared to the simple deny-list layered on top of FullAWSAccess."
+      }
+    }
+  },
+  {
+    "id": "iam-identity-center-permission-sets-vs-per-account-users",
+    "domain": "Identity & Access Management",
+    "scenario": "A company with 50 AWS accounts under one Organization currently requires each employee to have a separate IAM user, with its own password and access keys, created manually in every account they need access to, causing significant onboarding and offboarding overhead and inconsistent permissions across accounts. The company wants a single place to manage each employee's identity and control what permissions they get in which accounts, ideally integrated with their existing corporate identity provider. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continue creating IAM users per account, but automate creation with a script triggered by the HR system."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS IAM Identity Center, federating with the corporate identity provider, and assign permission sets to users or groups per account, granting temporary role-based access instead of per-account IAM users."
+      },
+      {
+        "key": "C",
+        "text": "Create one IAM user per employee in the Organization's management account, and have employees assume roles cross-account from there using long-lived access keys."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Directory Service to create a Microsoft Active Directory in every account and have employees log in separately to each."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "IAM Identity Center is the single control plane for centralized identity, integrating with existing corporate identity providers and mapping permission sets to users and groups across all accounts, replacing per-account IAM users with temporary, centrally managed role-based access.",
+      "incorrect": {
+        "A": "Automating IAM user creation still leaves the company managing per-account long-lived credentials at scale — it automates the symptom rather than solving the underlying need for a single place to manage identity and permissions.",
+        "C": "Centralizing IAM users in the management account and using long-lived access keys to assume roles still means managing individual credentials directly, which is exactly the credential-risk pattern IAM Identity Center avoids via temporary STS credentials.",
+        "D": "Deploying separate Active Directory instances per account multiplies management overhead rather than centralizing it, and doesn't integrate with one existing corporate identity provider in one place."
+      }
+    }
+  },
+  {
+    "id": "cloudtrail-org-trail-log-archive-account",
+    "domain": "Governance & Compliance",
+    "scenario": "A company's security team needs a single, tamper-resistant, centralized log of all API activity across every account in their Organization, stored somewhere that even an account administrator in any member account cannot delete or modify, for forensic investigation purposes. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Enable CloudTrail individually in each account, with each account's trail delivering logs to that same account's own S3 bucket."
+      },
+      {
+        "key": "B",
+        "text": "Create an organization trail in the Organization's management account that applies to all member accounts, delivering logs to a centralized S3 bucket in a dedicated Log Archive account, with a bucket policy restricting delete and modify permissions to designated security administrators only."
+      },
+      {
+        "key": "C",
+        "text": "Configure each account to stream CloudTrail events to a per-account CloudWatch Logs group only."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Config aggregators to collect a consolidated view of all account activity instead of CloudTrail."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "An organization trail centrally captures every member account's activity automatically, including new accounts as they're created, and delivering to a separate, access-restricted Log Archive account (not the source account itself) ensures no member account administrator can delete or tamper with the logs.",
+      "incorrect": {
+        "A": "Storing each account's trail in its own account's bucket means that account's administrator, or a compromised credential in that account, could delete or modify the logs — failing the tamper-resistance requirement entirely.",
+        "C": "CloudWatch Logs groups within each account are still owned by and modifiable within that same account, and don't provide the centralized, cross-account tamper-resistant archive a dedicated Log Archive account does.",
+        "D": "AWS Config aggregators consolidate configuration compliance data, not CloudTrail API activity logs — the wrong service for this specific auditing requirement."
+      }
+    }
+  },
+  {
+    "id": "direct-connect-gateway-multi-region-vif",
+    "domain": "Networking & Connectivity",
+    "scenario": "A global enterprise has a single Direct Connect connection established at their headquarters, and needs private, consistent connectivity from that one on-premises location to VPCs in five different AWS Regions across three different AWS accounts, without provisioning a separate physical Direct Connect connection in each Region. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Provision a new Direct Connect connection and private VIF in each of the five Regions individually."
+      },
+      {
+        "key": "B",
+        "text": "Use a Direct Connect Gateway, associating a single private virtual interface from the existing connection with virtual private gateways or transit gateways in each of the five Regions and three accounts."
+      },
+      {
+        "key": "C",
+        "text": "Use AWS Site-to-Site VPN as a substitute for Direct Connect in the four Regions without a physical connection."
+      },
+      {
+        "key": "D",
+        "text": "Use VPC peering between the Region containing the Direct Connect connection and the other four Regions."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "A Direct Connect Gateway lets a single connection's private VIF reach VPCs, via their virtual private gateways or attached transit gateways, across many Regions and accounts globally, without needing a separate physical connection per Region.",
+      "incorrect": {
+        "A": "Provisioning five separate physical connections is exactly the redundant cost and effort Direct Connect Gateway is designed to eliminate.",
+        "C": "Falling back to VPN for the other Regions abandons the private, dedicated connectivity that motivated using Direct Connect in the first place, introducing internet-routed tunnels instead.",
+        "D": "VPC peering doesn't provide access back to the on-premises network at all — peering only connects VPCs to each other, not to an on-premises Direct Connect circuit."
+      }
+    }
+  },
+  {
+    "id": "route53-resolver-hybrid-dns-inbound-outbound",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company has both on-premises data centers and multiple AWS accounts and VPCs, and needs on-premises servers to resolve DNS names for resources inside AWS VPCs, and EC2 instances inside AWS VPCs to resolve DNS names for on-premises servers, all without deploying and managing their own DNS forwarder EC2 instances. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Deploy self-managed BIND DNS servers on EC2 in each VPC to forward queries to on-premises DNS servers and vice versa."
+      },
+      {
+        "key": "B",
+        "text": "Use Amazon Route 53 Resolver inbound and outbound endpoints, with forwarding rules directing on-premises-bound queries out to on-premises DNS servers and on-premises-originated queries in to AWS-hosted records."
+      },
+      {
+        "key": "C",
+        "text": "Manually maintain identical DNS records in both the on-premises DNS servers and a public Route 53 hosted zone."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Direct Connect alone, since it automatically forwards DNS queries bidirectionally."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Route 53 Resolver inbound endpoints let on-premises DNS forward AWS-bound queries into a VPC, and outbound endpoints with forwarding rules let VPC resources forward on-premises-bound queries out — a fully managed bidirectional hybrid DNS solution requiring no self-managed forwarder infrastructure.",
+      "incorrect": {
+        "A": "Self-managed BIND servers on EC2 work, but they require the company to build and operate exactly the forwarding infrastructure Route 53 Resolver already provides as a managed service.",
+        "C": "Manually duplicating records in two places doesn't scale, is error-prone, and a public hosted zone isn't appropriate for private, non-public resources anyway.",
+        "D": "Direct Connect provides network connectivity only — it has no DNS forwarding capability built in."
+      }
+    }
+  },
+  {
+    "id": "organizations-tag-policies-cost-center",
+    "domain": "Governance & Compliance",
+    "scenario": "A company's finance team needs every resource across all 80 accounts in its Organization to have a consistently formatted CostCenter tag for accurate cost allocation, but currently different teams use inconsistent tag keys and casing, making automated cost allocation reports unreliable. What should the company implement to enforce a consistent tagging standard centrally?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Ask each team lead to manually review and correct tags in their account on a quarterly basis."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Organizations tag policies to define the required tag key and allowed values centrally, applied across the Organization, paired with AWS Config rules to detect non-compliant resources."
+      },
+      {
+        "key": "C",
+        "text": "Rename every existing resource across all 80 accounts to include the tag value in the resource name instead of using tags."
+      },
+      {
+        "key": "D",
+        "text": "Grant the finance team IAM permissions to directly edit tags on resources in every account."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Organizations tag policies let a company centrally define standardized tag keys and allowed values enforced across the Organization, and pairing this with Config rules provides ongoing detection of non-compliant resources — the standard AWS-native mechanism for this problem.",
+      "incorrect": {
+        "A": "Manual quarterly review doesn't scale across 80 accounts and doesn't prevent new non-compliant resources from being created continuously in between reviews.",
+        "C": "Encoding cost-center information into resource names instead of tags abandons the tagging system entirely and isn't compatible with AWS's native cost allocation tooling, which is built around tags.",
+        "D": "Granting the finance team direct tag-editing permissions across every account is an ongoing manual workaround rather than a scalable, centrally enforced standard, and doesn't prevent tags from drifting again."
+      }
+    }
+  },
+  {
+    "id": "eventbridge-cross-account-central-security-bus",
+    "domain": "Security & Compliance",
+    "scenario": "A security team wants every account in the Organization to automatically forward specific security-relevant events, like GuardDuty findings or root account sign-in events, to one centralized account for aggregated processing and alerting, without each account team needing to build or maintain their own forwarding logic. What architecture should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have each account's security team write and maintain their own Lambda function that polls for security events and pushes them to the central account's API."
+      },
+      {
+        "key": "B",
+        "text": "Create a central Amazon EventBridge event bus in the security account, grant cross-account permissions for member accounts' default event buses to forward matching events to it via EventBridge rules, and have member accounts add a simple forwarding rule."
+      },
+      {
+        "key": "C",
+        "text": "Require every account to send all CloudTrail logs directly to the central account's S3 bucket, and run a scheduled Lambda function to parse them for security events."
+      },
+      {
+        "key": "D",
+        "text": "Manually export findings from each account's GuardDuty console on a recurring schedule and import them into a spreadsheet in the central account."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "EventBridge natively supports cross-account event bus targeting: member accounts add a lightweight rule forwarding matching events to the central account's event bus, which then fans out to processing and alerting targets — a low-maintenance-per-account pattern for centralizing security event handling.",
+      "incorrect": {
+        "A": "Custom polling Lambda functions per account are exactly the bespoke, per-account maintenance burden the requirement wants to avoid.",
+        "C": "Parsing raw CloudTrail logs for specific security events via a scheduled batch job is slower and far more effort to build and maintain than EventBridge's native rule-based routing.",
+        "D": "Manual, periodic export and import is not automated, doesn't scale, and introduces significant delay unsuitable for security alerting."
+      }
+    }
+  },
+  {
+    "id": "network-firewall-centralized-inspection-vpc",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company wants to enforce consistent, centrally managed network traffic inspection, including intrusion detection and prevention and domain filtering, for all outbound traffic from every VPC across many accounts in its Organization, routed through one central inspection point, rather than deploying separate third-party firewall appliances in every VPC. What architecture should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Deploy a third-party firewall appliance fleet behind a Gateway Load Balancer independently in every VPC across every account."
+      },
+      {
+        "key": "B",
+        "text": "Deploy AWS Network Firewall in a centralized inspection VPC, and use Transit Gateway to route traffic from every spoke VPC through the inspection VPC before it reaches the internet."
+      },
+      {
+        "key": "C",
+        "text": "Enable VPC Flow Logs in every VPC and manually review them for suspicious traffic patterns."
+      },
+      {
+        "key": "D",
+        "text": "Attach an AWS WAF web ACL to every Application Load Balancer in every VPC."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This is the standard centralized-inspection-VPC pattern: Transit Gateway routes all spoke VPCs' outbound traffic through one central VPC running AWS Network Firewall, providing consistent, centrally managed inspection without deploying infrastructure into every individual VPC.",
+      "incorrect": {
+        "A": "Deploying appliances independently in every VPC is exactly the decentralized, per-VPC management burden the company wants to avoid.",
+        "C": "VPC Flow Logs provide visibility into traffic metadata for after-the-fact analysis; they don't perform active inspection or prevention in real time.",
+        "D": "WAF operates at Layer 7 for HTTP(S) traffic to specific resources like ALBs — it doesn't provide general outbound network-layer traffic inspection for all VPC traffic."
+      }
+    }
+  },
+  {
+    "id": "customizations-for-control-tower-cfct",
+    "domain": "Governance & Compliance",
+    "scenario": "A company has AWS Control Tower governing its multi-account landing zone, but needs additional custom guardrails and baseline resources, such as specific custom Config rules, a standard set of VPC endpoints, and a specific IAM role, automatically applied to every new account as it's vended through Account Factory, beyond what Control Tower's built-in guardrails provide. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually configure the additional resources in each new account after it's created via Account Factory."
+      },
+      {
+        "key": "B",
+        "text": "Use Customizations for AWS Control Tower (CfCT), which layers custom CloudFormation stacks and SCPs on top of every account provisioned through Account Factory, automatically."
+      },
+      {
+        "key": "C",
+        "text": "Disable Control Tower and manage all guardrails manually through Organizations and Config directly."
+      },
+      {
+        "key": "D",
+        "text": "Create a separate AWS Service Catalog product for the additional resources, requiring each new account owner to manually launch it after account creation."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Customizations for Control Tower is purpose-built to extend Control Tower's baseline: it applies custom CloudFormation stacks and additional SCPs automatically to every account as it's vended through Account Factory, without requiring manual post-provisioning steps.",
+      "incorrect": {
+        "A": "Manual configuration after every account creation doesn't scale and defeats the purpose of Account Factory's automated vending.",
+        "C": "Disabling Control Tower discards its existing baseline guardrails and account-vending automation entirely, a drastic overreaction to needing a few additional customizations.",
+        "D": "Requiring manual launch of a Service Catalog product per new account still requires a manual step for every account, rather than the fully automatic application CfCT provides."
+      }
+    }
+  },
+  {
+    "id": "secrets-manager-cross-account-resource-policy",
+    "domain": "Identity & Access Management",
+    "scenario": "A company has a shared database credential that both a Dev account and a Prod account's applications need to reference for a shared, read-only reporting database, and wants to avoid storing and manually keeping duplicate copies of the secret in sync across both accounts, while still controlling exactly which principals in each account can retrieve it. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Store the secret in AWS Secrets Manager in one account, and copy its value into a second Secrets Manager secret in the other account, updating both whenever it changes."
+      },
+      {
+        "key": "B",
+        "text": "Store the secret once in AWS Secrets Manager in a central account, and attach a resource-based policy to the secret granting specific IAM roles in the Dev and Prod accounts permission to retrieve it directly via cross-account access."
+      },
+      {
+        "key": "C",
+        "text": "Store the secret as a plaintext parameter in Systems Manager Parameter Store in each account."
+      },
+      {
+        "key": "D",
+        "text": "Email the secret value to each application team and have them hardcode it into their application configuration."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Secrets Manager secrets support resource-based policies, so a single secret stored once in a central account can grant specific cross-account principals in Dev and Prod direct retrieval permission, eliminating duplicate copies while centralizing exactly who can access it.",
+      "incorrect": {
+        "A": "Duplicating the secret into two separate secrets requires manually keeping them in sync on every rotation or change, exactly the maintenance burden the requirement wants to avoid.",
+        "C": "Storing a plaintext parameter still requires duplicate copies per account to be manually kept in sync, and lacks Secrets Manager's native cross-account resource-policy sharing.",
+        "D": "Hardcoding secrets into application configuration is a serious security anti-pattern with no rotation or centralized access control at all."
+      }
+    }
+  },
+  {
+    "id": "access-analyzer-org-external-access-findings",
+    "domain": "Security & Compliance",
+    "scenario": "A security team manages dozens of accounts across an Organization and wants an automated way to continuously identify any S3 bucket, IAM role, KMS key, or other resource that has been granted access to a principal outside the Organization, across every account, without manually auditing each account's policies one by one. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually review the resource policy of every S3 bucket, IAM role, and KMS key in each account on a recurring schedule."
+      },
+      {
+        "key": "B",
+        "text": "Enable an IAM Access Analyzer organization-level analyzer, which continuously scans resource policies across every account in the Organization and reports any resource granting access to an external principal."
+      },
+      {
+        "key": "C",
+        "text": "Use AWS Trusted Advisor's security checks, since they cover this exact use case across accounts automatically."
+      },
+      {
+        "key": "D",
+        "text": "Write a custom script using the IAM policy simulator to test every possible external principal against every resource policy."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "An Access Analyzer instance created at the organization level automatically analyzes resource-based policies across every account in the Organization, continuously surfacing findings for any resource that grants access to a principal outside a defined zone of trust.",
+      "incorrect": {
+        "A": "Manual policy review across dozens of accounts doesn't scale and isn't continuous — new findings between review cycles go undetected.",
+        "C": "Trusted Advisor's security checks cover a different, narrower set of best-practice checks and are not the purpose-built cross-account external-access-detection engine Access Analyzer is.",
+        "D": "The IAM policy simulator tests specific hypothetical requests one at a time — it isn't designed to continuously and automatically discover unintended external access across many accounts."
+      }
+    }
+  },
+  {
+    "id": "ram-share-route53-private-hosted-zone",
+    "domain": "Networking & Connectivity",
+    "scenario": "A central networking team manages a Route 53 private hosted zone containing internal service DNS records that needs to resolve consistently from VPCs in 30 different application accounts across the Organization, without each application account needing its own copy of the hosted zone or manual record duplication. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually recreate the same private hosted zone with identical records in every one of the 30 accounts."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Resource Access Manager (RAM) to share the private hosted zone's VPC association capability with the other accounts, allowing their VPCs to be associated with the single centrally managed hosted zone."
+      },
+      {
+        "key": "C",
+        "text": "Convert the private hosted zone to a public hosted zone so any VPC can resolve it without special configuration."
+      },
+      {
+        "key": "D",
+        "text": "Use Route 53 Resolver outbound endpoints in each of the 30 accounts to forward queries to the central account."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "RAM lets a private hosted zone be shared so VPCs in other accounts can be directly associated with the single, centrally managed zone, avoiding any duplication of records while ensuring every associated VPC resolves the exact same source of truth.",
+      "incorrect": {
+        "A": "Manually recreating the zone and keeping records in sync across 30 accounts is precisely the duplication and maintenance burden the requirement wants to avoid.",
+        "C": "Converting to a public hosted zone would expose internal service names on the public internet, an unnecessary security exposure for internal-only DNS.",
+        "D": "Resolver outbound endpoints forward queries to external DNS servers; they aren't the mechanism for directly associating multiple accounts' VPCs with one centrally managed private hosted zone."
+      }
+    }
+  },
+  {
+    "id": "aurora-serverless-v2-unpredictable-workload",
+    "domain": "Database",
+    "scenario": "A company is launching a new internal reporting application with highly unpredictable usage: completely idle most nights and weekends, but with sudden spikes during month-end close that are hard to predict in advance. They want a relational MySQL-compatible database that automatically scales capacity up and down within seconds to match this variable load, without manually resizing instances or over-provisioning for peak. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon RDS for MySQL with a fixed, peak-sized instance running continuously."
+      },
+      {
+        "key": "B",
+        "text": "Amazon Aurora Serverless v2."
+      },
+      {
+        "key": "C",
+        "text": "Amazon RDS for MySQL with Auto Scaling storage only."
+      },
+      {
+        "key": "D",
+        "text": "Amazon DynamoDB with on-demand capacity mode."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Aurora Serverless v2 scales database capacity automatically and near-instantly, in fine-grained increments within seconds, to match unpredictable load, exactly matching this pattern without manual resizing or peak over-provisioning.",
+      "incorrect": {
+        "A": "A fixed peak-sized instance running continuously wastes significant cost during the many idle periods, which is exactly what the requirement wants to avoid.",
+        "C": "RDS storage Auto Scaling only adjusts storage capacity, not compute or memory capacity — it doesn't address the need to scale compute for unpredictable load spikes.",
+        "D": "DynamoDB is a different, NoSQL data model — the requirement specifies a relational MySQL-compatible database, so switching data models isn't the fit here."
+      }
+    }
+  },
+  {
+    "id": "elasticache-redis-vs-memcached-leaderboard",
+    "domain": "Database",
+    "scenario": "A company is building a new caching layer for a web application and needs the ability to persist cached data to disk so it can be reloaded after a restart, built-in replication for high availability, and support for more complex data structures such as sorted sets to power a leaderboard feature, all as part of one caching solution. Which should they choose?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon ElastiCache for Memcached"
+      },
+      {
+        "key": "B",
+        "text": "Amazon ElastiCache for Redis"
+      },
+      {
+        "key": "C",
+        "text": "Amazon DynamoDB Accelerator (DAX)"
+      },
+      {
+        "key": "D",
+        "text": "Amazon S3 with CloudFront caching"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Redis supports data persistence, built-in replication for high availability, and rich data structures like sorted sets, ideal for leaderboards — Memcached supports none of these three requirements.",
+      "incorrect": {
+        "A": "Memcached is a simple, multi-threaded in-memory cache with no persistence, no built-in replication, and no support for complex data structures like sorted sets.",
+        "C": "DAX is specifically an in-memory cache in front of DynamoDB tables, not a general-purpose application caching layer for arbitrary web app data.",
+        "D": "CloudFront and S3 caching serve static content at the edge; they don't provide an in-memory application data cache with data-structure support like sorted sets."
+      }
+    }
+  },
+  {
+    "id": "s3-intelligent-tiering-new-unpredictable-access",
+    "domain": "Storage",
+    "scenario": "A company is launching a new document management application where uploaded files have highly unpredictable and changing access patterns, and this pattern can't be predicted per document in advance. The company wants to minimize storage cost automatically without risking retrieval-time delays or extra retrieval fees when a file's access pattern changes. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually tag files and write a Lambda function that moves them between storage classes based on assumed access patterns."
+      },
+      {
+        "key": "B",
+        "text": "Store all objects with S3 Intelligent-Tiering, which automatically moves objects between access tiers based on actual observed access patterns with no retrieval fees."
+      },
+      {
+        "key": "C",
+        "text": "Use S3 Glacier Flexible Retrieval for all documents from the moment they're uploaded."
+      },
+      {
+        "key": "D",
+        "text": "Configure an S3 Lifecycle policy that transitions every object to S3 Standard-IA after 30 days, regardless of individual access patterns."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Intelligent-Tiering is purpose-built for unpredictable, changing access patterns per object, automatically moving objects between tiers based on actual access with no retrieval fees and no risk of unexpected delays.",
+      "incorrect": {
+        "A": "A custom Lambda-based tiering system requires guessing access patterns in advance and reinvents, at extra engineering cost, something Intelligent-Tiering already does natively.",
+        "C": "Glacier Flexible Retrieval has retrieval delays and fees, inappropriate for documents that might need frequent, fast access unpredictably.",
+        "D": "A blanket 30-day lifecycle rule applies the same fixed timeline to every object regardless of its actual access pattern, incurring early-deletion or retrieval fees for objects that don't fit that assumed pattern."
+      }
+    }
+  },
+  {
+    "id": "msk-vs-kinesis-kafka-compatibility",
+    "domain": "Application Integration",
+    "scenario": "A company is building a new real-time data pipeline and has an existing team of engineers experienced with Apache Kafka, along with existing internal tooling and client libraries built specifically against the Kafka protocol that they want to reuse without rewriting. They want a fully managed streaming service that is API-compatible with their existing Kafka-based tooling. Which should they choose?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon Kinesis Data Streams"
+      },
+      {
+        "key": "B",
+        "text": "Amazon Managed Streaming for Apache Kafka (Amazon MSK)"
+      },
+      {
+        "key": "C",
+        "text": "Amazon SQS"
+      },
+      {
+        "key": "D",
+        "text": "Amazon EventBridge"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "MSK is a fully managed service running the actual Apache Kafka engine, fully compatible with existing Kafka client libraries and tooling, letting the team reuse their existing Kafka-based investment without rewriting.",
+      "incorrect": {
+        "A": "Kinesis Data Streams is a capable, fully managed streaming service, but it uses its own distinct API and is not Kafka-protocol-compatible.",
+        "C": "SQS is a queue service with an entirely different consumption model from a Kafka-compatible streaming log — existing Kafka tooling wouldn't work against it.",
+        "D": "EventBridge is an event bus for rule-based routing between services, not a Kafka-compatible high-throughput streaming log."
+      }
+    }
+  },
+  {
+    "id": "api-gateway-mutual-tls-b2b",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company is building a new B2B API that will be consumed by a small number of enterprise partners, and the security requirement is that each partner's calling application must present a valid client-side X.509 certificate that the API Gateway verifies before allowing the request through, in addition to standard IAM or API-key authorization. What API Gateway feature should they configure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A Lambda authorizer that inspects the Authorization header for a bearer token."
+      },
+      {
+        "key": "B",
+        "text": "API Gateway mutual TLS (mTLS) authentication, configured with a truststore of the partners' certificate authorities."
+      },
+      {
+        "key": "C",
+        "text": "AWS WAF with an IP-based allow list restricting access to the partners' known IP ranges."
+      },
+      {
+        "key": "D",
+        "text": "API Gateway resource policies restricting access to a specific VPC endpoint."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Mutual TLS is the specific API Gateway feature for verifying a client-presented X.509 certificate as part of the TLS handshake itself, validated against a configured truststore of trusted CAs, directly matching the certificate-based authentication requirement.",
+      "incorrect": {
+        "A": "A Lambda authorizer inspecting a bearer token authenticates based on a token in the request payload or headers, not a TLS-layer client certificate.",
+        "C": "IP allow-listing restricts by network origin, not by verified client certificate identity.",
+        "D": "Resource policies restricting to a VPC endpoint control network-path-based access for private APIs; they don't verify a client certificate either."
+      }
+    }
+  },
+  {
+    "id": "waf-shield-advanced-new-public-app",
+    "domain": "Security & Compliance",
+    "scenario": "A company is launching a new public-facing e-commerce application and expects it to be a potential target for both application-layer attacks, such as SQL injection and bad bots, and large-scale volumetric DDoS attacks. In addition to mitigation, the company specifically wants cost protection, reimbursement for scaling charges incurred as a direct result of a DDoS attack, and access to AWS's DDoS Response Team during an active attack. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS WAF alone, with rate-based rules to mitigate volumetric attacks."
+      },
+      {
+        "key": "B",
+        "text": "AWS Shield Standard, which is automatically included at no extra cost for all AWS customers."
+      },
+      {
+        "key": "C",
+        "text": "AWS WAF for application-layer protection, combined with AWS Shield Advanced for enhanced DDoS mitigation, cost protection against scaling charges from attacks, and DRT access."
+      },
+      {
+        "key": "D",
+        "text": "Amazon CloudFront alone, since it absorbs all DDoS traffic automatically at the edge."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "WAF handles application-layer threats, while Shield Advanced specifically adds enhanced DDoS mitigation, cost protection for attack-driven scaling charges, and 24/7 DRT access — none of which Shield Standard or WAF alone provide.",
+      "incorrect": {
+        "A": "WAF's rate-based rules help with some application-layer volumetric patterns, but don't provide the network-layer DDoS mitigation depth, cost protection, or DRT access Shield Advanced adds.",
+        "B": "Shield Standard is included free for everyone and provides baseline protection, but it does not include cost protection or DRT access — those are Shield Advanced-only features.",
+        "D": "CloudFront provides some inherent edge-scale absorption, but by itself it doesn't provide cost protection, DRT access, or application-layer rule enforcement."
+      }
+    }
+  },
+  {
+    "id": "dynamodb-single-table-vs-multi-table-design",
+    "domain": "Database",
+    "scenario": "A company is designing a new DynamoDB-backed application with several related entity types, such as customers, orders, and order items, that are frequently queried together in a small number of well-known, predictable access patterns, and the team wants to minimize the number of round trips and read capacity consumed for these common queries. What design approach best fits?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a separate DynamoDB table per entity type and join them at the application layer using SQL-like joins."
+      },
+      {
+        "key": "B",
+        "text": "Use a single-table design, storing related entity types together in one table using composite partition and sort keys structured around the known access patterns, so related items can be retrieved in a single query."
+      },
+      {
+        "key": "C",
+        "text": "Use Amazon RDS instead of DynamoDB, since only a relational database can efficiently model related entities."
+      },
+      {
+        "key": "D",
+        "text": "Create a separate table per entity type, and use DynamoDB Streams to continuously replicate a denormalized copy of all data into a fourth join table."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Single-table design is the standard modeling approach when access patterns are known and predictable upfront: structuring composite keys so related items sit together lets one Query call retrieve everything needed, minimizing round trips and consumed capacity.",
+      "incorrect": {
+        "A": "DynamoDB has no native join capability, and joining at the application layer requires multiple round trips per entity type.",
+        "C": "Moving to RDS solves the relational modeling question at the cost of DynamoDB's scalability model, when the actual problem is precisely what single-table design is built to solve.",
+        "D": "A Streams-based denormalization pipeline into a separate join table adds significant architectural complexity and eventual-consistency lag, when a well-designed single table already achieves the same goal directly."
+      }
+    }
+  },
+  {
+    "id": "cognito-user-pools-federated-social-saml",
+    "domain": "Identity & Access Management",
+    "scenario": "A company is building a new customer-facing mobile app and wants users to be able to sign in using their existing Google or Facebook accounts, or their corporate SAML identity if they're a B2B customer, without the company needing to build and maintain its own username and password authentication system or manage social-provider integration logic directly. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Build a custom authentication service using Lambda and a DynamoDB table storing hashed passwords."
+      },
+      {
+        "key": "B",
+        "text": "Amazon Cognito user pools, configured with social identity providers and a SAML identity provider, issuing standard tokens to the app after successful federated sign-in."
+      },
+      {
+        "key": "C",
+        "text": "AWS IAM Identity Center, since it already supports external identity providers for workforce access."
+      },
+      {
+        "key": "D",
+        "text": "Amazon Cognito identity pools alone, without a user pool, to directly grant temporary AWS credentials to app users."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Cognito user pools are purpose-built for customer-facing identity, natively supporting federation with social identity providers and SAML providers, issuing standard tokens without the company building or maintaining its own credential store.",
+      "incorrect": {
+        "A": "Building custom authentication and password storage is exactly the undifferentiated heavy lifting the requirement wants to avoid, and doesn't natively provide social or SAML federation.",
+        "C": "IAM Identity Center is designed for workforce access to AWS accounts and applications, not for a public-facing customer mobile app's sign-in flow.",
+        "D": "Cognito identity pools grant temporary AWS credentials for accessing AWS resources directly, but rely on a user pool or another identity provider to actually authenticate the user first."
+      }
+    }
+  },
+  {
+    "id": "elasticache-global-datastore-vs-dynamodb-global-tables-session",
+    "domain": "Database",
+    "scenario": "A company is building a new global web application and needs an in-memory, low-latency session store that replicates session data across three Regions with sub-second replication lag, specifically to be used as a cache layer in front of an existing relational database, not as the durable system of record for session data. Which should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon DynamoDB Global Tables as the session store."
+      },
+      {
+        "key": "B",
+        "text": "Amazon ElastiCache for Redis with Global Datastore, replicating across the three Regions."
+      },
+      {
+        "key": "C",
+        "text": "Amazon RDS Multi-AZ, storing session data directly in the relational database."
+      },
+      {
+        "key": "D",
+        "text": "Amazon S3 Cross-Region Replication, storing session data as objects."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "ElastiCache Global Datastore provides a purpose-built in-memory, low-latency, cross-Region-replicated cache layer, matching both the cache role and the cross-Region replication requirement without treating the cache as a durable system of record.",
+      "incorrect": {
+        "A": "DynamoDB Global Tables is a durable, multi-region-write NoSQL database, a heavier, non-cache solution when the requirement explicitly describes an in-memory cache layer in front of an existing database.",
+        "C": "Storing session data directly in the relational database defeats the purpose of an in-memory cache layer, and RDS Multi-AZ doesn't provide cross-region replication at all.",
+        "D": "S3 is an object store with much higher latency than an in-memory cache and isn't suited to rapidly-changing, low-latency session data."
+      }
+    }
+  },
+  {
+    "id": "redshift-serverless-vs-provisioned-variable-load",
+    "domain": "Analytics & Data Lake",
+    "scenario": "A company is launching a new data analytics solution where query volume is highly variable and hard to predict, with almost no analytical queries some days and a huge spike in concurrent queries on month-end reporting days, and the company doesn't want to manage cluster sizing or pay for idle compute capacity between spikes. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon Redshift with a fixed, large provisioned cluster sized for the month-end peak, running continuously."
+      },
+      {
+        "key": "B",
+        "text": "Amazon Redshift Serverless, which automatically scales compute capacity based on actual query demand and charges based on usage."
+      },
+      {
+        "key": "C",
+        "text": "Amazon Athena, since it can replace all data-warehousing use cases regardless of workload pattern."
+      },
+      {
+        "key": "D",
+        "text": "A small, fixed provisioned Redshift cluster sized for average daily load, manually resized before known month-end spikes."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Redshift Serverless automatically scales compute up and down to match actual, unpredictable query demand and charges based on usage, matching a highly variable, hard-to-predict workload without managing sizing or paying for idle capacity.",
+      "incorrect": {
+        "A": "A fixed large provisioned cluster sized for peak wastes significant cost during the many low-query days, and still requires managing cluster sizing decisions.",
+        "C": "Athena is well suited to ad hoc querying of data in S3, but it doesn't provide the same data-warehouse-style concurrency scaling and workload management Redshift offers, and isn't a blanket replacement for every use case.",
+        "D": "Manually resizing before known spikes still requires managing cluster sizing, and doesn't help with unpredictable spikes that aren't known in advance."
+      }
+    }
+  },
+  {
+    "id": "iot-core-mqtt-device-fleet",
+    "domain": "IoT",
+    "scenario": "A company is building a new product involving tens of thousands of internet-connected sensors that need to securely connect using the lightweight MQTT protocol, be individually authenticated and authorized, and have their telemetry data routed to different backend AWS services based on message content, all without the company building its own device connection or management infrastructure. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon API Gateway WebSocket APIs, having each device maintain a persistent WebSocket connection."
+      },
+      {
+        "key": "B",
+        "text": "AWS IoT Core, using its MQTT message broker, device authentication with X.509 certificates, and rules engine to route messages to different targets based on content."
+      },
+      {
+        "key": "C",
+        "text": "Amazon SQS, having each device poll a shared queue for messages."
+      },
+      {
+        "key": "D",
+        "text": "Amazon EC2 instances running a self-managed, open-source MQTT broker."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "IoT Core is purpose-built for this: a managed MQTT broker supporting massive device fleets, per-device certificate authentication, and a rules engine that routes incoming messages to different AWS targets based on content, without building any of that infrastructure.",
+      "incorrect": {
+        "A": "API Gateway WebSocket APIs don't natively speak MQTT, don't provide IoT-specific device certificate management, and lack a built-in content-based routing rules engine.",
+        "C": "SQS is a pull-based queue not designed for MQTT device connectivity or fleet-scale device authentication.",
+        "D": "A self-managed MQTT broker on EC2 requires building and operating exactly the device-scale connection management, security, and routing infrastructure IoT Core already provides."
+      }
+    }
+  },
+  {
+    "id": "eks-fargate-profiles-multi-tenant-isolation",
+    "domain": "Compute",
+    "scenario": "A company is building a new multi-tenant SaaS platform on Amazon EKS, where each tenant's workloads run in their own Kubernetes namespace, and the security requirement is that tenants' pods must never share the same underlying compute host, to prevent any risk of container escape exposing another tenant's data, while still minimizing the operational overhead of managing worker node capacity across many namespaces. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A single, large EC2 managed node group shared across all tenant namespaces."
+      },
+      {
+        "key": "B",
+        "text": "AWS Fargate profiles configured per namespace, so each tenant's pods run on their own dedicated, isolated Fargate infrastructure without a shared underlying EC2 host."
+      },
+      {
+        "key": "C",
+        "text": "Kubernetes taints and tolerations on a shared EC2 node group, ensuring pods with matching tolerations are preferentially scheduled together."
+      },
+      {
+        "key": "D",
+        "text": "A separate EKS cluster per tenant."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Fargate profiles let each namespace's pods run on dedicated, per-pod Fargate infrastructure rather than a shared EC2 host, satisfying the no-shared-host isolation requirement while EKS and Fargate still manage the underlying node capacity.",
+      "incorrect": {
+        "A": "A shared EC2 node group means multiple tenants' pods can be scheduled onto the same underlying EC2 instance, directly violating the isolation requirement.",
+        "C": "Taints and tolerations influence scheduling preferences but don't guarantee that no two tenants' pods ever land on the same underlying EC2 host.",
+        "D": "A separate EKS cluster per tenant provides isolation, but managing a full separate cluster per tenant is far more operational overhead than Fargate profiles per namespace within one cluster."
+      }
+    }
+  },
+  {
+    "id": "vpc-lattice-cross-account-service-network",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company is building a new set of microservices that need to communicate with each other across multiple VPCs and multiple AWS accounts, with consistent access control, observability, and traffic management applied uniformly regardless of which VPC or account a service happens to run in, without each team needing to set up their own VPC peering, Transit Gateway routes, or PrivateLink endpoints for every service-to-service connection. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "VPC Peering between every pair of VPCs that need to communicate."
+      },
+      {
+        "key": "B",
+        "text": "Amazon VPC Lattice, defining a service network that services in different VPCs and accounts can join, with centralized access control and traffic management applied consistently across the network."
+      },
+      {
+        "key": "C",
+        "text": "AWS Transit Gateway alone, connecting all VPCs at the network layer."
+      },
+      {
+        "key": "D",
+        "text": "A separate AWS PrivateLink endpoint service for every individual microservice."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "VPC Lattice is purpose-built as an application-layer service-to-service networking construct: services across different VPCs and accounts join a shared service network with consistent, centrally managed access control and traffic management, without per-connection peering, routes, or endpoints.",
+      "incorrect": {
+        "A": "VPC Peering requires a distinct connection per VPC pair, doesn't scale cleanly to many services, and provides only network-layer connectivity, not application-layer access control.",
+        "C": "Transit Gateway solves network-layer routing between VPCs, but doesn't provide application-layer service discovery or consistent access control for individual services.",
+        "D": "Setting up a separate PrivateLink endpoint service per microservice individually is exactly the manual, per-service setup overhead the requirement wants to avoid."
+      }
+    }
+  },
+  {
+    "id": "cloudfront-origin-groups-failover",
+    "domain": "Content Delivery",
+    "scenario": "A company is building a new content delivery solution and wants CloudFront to automatically fail over to a secondary origin server in a different Region if the primary origin becomes unavailable or returns errors, without requiring any DNS changes or manual intervention during the failover. What CloudFront feature should they configure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Multiple CloudFront distributions, one per origin, with Route 53 health checks to redirect users between them."
+      },
+      {
+        "key": "B",
+        "text": "A CloudFront origin group, consisting of a primary and a secondary origin, with failover criteria configured, such as specific HTTP error codes, to automatically shift requests to the secondary origin."
+      },
+      {
+        "key": "C",
+        "text": "Lambda@Edge functions that manually check origin health on every request and choose an origin dynamically."
+      },
+      {
+        "key": "D",
+        "text": "AWS Global Accelerator in front of CloudFront to handle the origin failover."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "CloudFront origin groups are the native feature for this: define a primary and secondary origin with failover criteria, and CloudFront automatically shifts requests to the secondary origin when the primary fails those criteria, with no DNS changes or manual steps required.",
+      "incorrect": {
+        "A": "Multiple distributions with Route 53 health-check-based DNS failover relies on DNS TTL expiry and client re-resolution, which is slower than CloudFront's built-in origin group failover.",
+        "C": "A custom Lambda@Edge health-check-per-request approach reinvents, at extra cost and complexity, functionality origin groups already provide natively.",
+        "D": "Global Accelerator operates in front of regional endpoints at the network layer for TCP/UDP traffic; it isn't the mechanism for CloudFront-to-origin failover."
+      }
+    }
+  },
+  {
+    "id": "lambda-at-edge-vs-cloudfront-functions",
+    "domain": "Content Delivery",
+    "scenario": "A company is building a new global web application and needs two different pieces of edge logic: very high-volume, ultra-low-latency header manipulation and simple redirects applied to every single viewer request, and a more complex operation involving an external network call to a third-party authentication service before allowing certain origin requests through. Which combination of edge compute options fits these two needs respectively?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use AWS Lambda@Edge for both needs."
+      },
+      {
+        "key": "B",
+        "text": "Use Amazon CloudFront Functions for the high-volume, lightweight case, since it's optimized for sub-millisecond JavaScript operations, and use Lambda@Edge for the case needing network calls, since it supports longer execution times, more memory, and calls to external services that CloudFront Functions cannot make."
+      },
+      {
+        "key": "C",
+        "text": "Use Amazon CloudFront Functions for both needs."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Step Functions at the edge for both needs."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "CloudFront Functions are specifically optimized for extremely high-scale, sub-millisecond, lightweight JavaScript operations at viewer request or response, but cannot make network calls; Lambda@Edge supports longer execution, more memory, and outbound network calls, fitting the more complex requirement.",
+      "incorrect": {
+        "A": "Using Lambda@Edge for the extremely high-volume, simple case works but is more expensive and higher-latency than necessary compared to CloudFront Functions.",
+        "C": "CloudFront Functions cannot make outbound network calls to a third-party service at all — it's incapable of fulfilling the second requirement regardless of cost considerations.",
+        "D": "Step Functions is a workflow orchestrator for coordinating AWS services, not an edge-compute runtime attached to CloudFront requests at all."
+      }
+    }
+  },
+  {
+    "id": "dynamodb-on-demand-cost-unpredictable-existing",
+    "domain": "Cost Optimization",
+    "scenario": "An existing DynamoDB table backing a company's application was configured with fixed provisioned throughput sized for its highest-ever traffic spike, but actual daily traffic is now wildly unpredictable: some days barely use 5% of the provisioned capacity, while a few days a month exceed it and get throttled. The team wants to eliminate both the wasted cost during quiet periods and the throttling during spikes, with minimal ongoing management. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continue with provisioned capacity, but write a script to manually adjust the provisioned throughput every day based on observed traffic."
+      },
+      {
+        "key": "B",
+        "text": "Switch the table to DynamoDB on-demand capacity mode, which automatically scales to accommodate traffic without pre-provisioned throughput."
+      },
+      {
+        "key": "C",
+        "text": "Enable DynamoDB Auto Scaling on the existing provisioned table, targeting a very high utilization percentage to avoid ever needing to scale."
+      },
+      {
+        "key": "D",
+        "text": "Migrate to Amazon RDS, since relational databases handle unpredictable traffic more gracefully than DynamoDB."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "On-demand capacity mode is purpose-built for this pattern: no capacity planning at all, automatically accommodating both the very quiet days and the spikes, while billing per-request instead of paying for unused pre-provisioned throughput.",
+      "incorrect": {
+        "A": "A manual daily-adjustment script still requires ongoing operational effort and can't react instantly to spikes happening within a day.",
+        "C": "DynamoDB Auto Scaling reacts to CloudWatch alarms with some lag, meaning short, sharp spikes can still cause throttling before scaling catches up.",
+        "D": "Migrating to RDS is a large, unnecessary re-architecture; RDS doesn't inherently handle unpredictable traffic better than DynamoDB on-demand mode, which was built for exactly this pattern."
+      }
+    }
+  },
+  {
+    "id": "lambda-snapstart-vs-provisioned-concurrency-cold-start",
+    "domain": "Operational Excellence",
+    "scenario": "An existing Java-based Lambda function backing a latency-sensitive customer-facing API has been experiencing customer complaints about occasional multi-second response times, traced to cold starts caused by the JVM's slow initialization, particularly after periods of low traffic. The team wants to reduce cold-start latency significantly without committing to paying for continuously warmed, pre-initialized execution environments around the clock. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Lambda Provisioned Concurrency, configured to keep a fixed number of execution environments warmed at all times."
+      },
+      {
+        "key": "B",
+        "text": "AWS Lambda SnapStart, which restores execution environments from a cached, pre-initialized snapshot rather than performing full JVM initialization on every cold start."
+      },
+      {
+        "key": "C",
+        "text": "Increase the Lambda function's memory allocation to the maximum available."
+      },
+      {
+        "key": "D",
+        "text": "Rewrite the function in a different, faster-starting language runtime, such as Node.js."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "SnapStart specifically targets this scenario for supported runtimes like Java: it caches a pre-initialized snapshot of the execution environment and restores from it on a cold start, dramatically cutting latency without requiring continuously paid-for warmed capacity.",
+      "incorrect": {
+        "A": "Provisioned Concurrency does effectively eliminate cold starts, but requires paying for a fixed number of pre-warmed environments continuously, which the team explicitly wants to avoid.",
+        "C": "More memory can help general execution speed somewhat, but doesn't fundamentally address the JVM initialization time that's the root cause of the described latency.",
+        "D": "Rewriting the function in a different runtime is a large engineering effort and abandons the existing Java codebase, not the targeted, minimal-effort fix SnapStart provides."
+      }
+    }
+  },
+  {
+    "id": "s3-intelligent-tiering-retrofit-existing-bucket",
+    "domain": "Cost Optimization",
+    "scenario": "An existing S3 bucket has accumulated several years of files with highly inconsistent, unpredictable access patterns that were never actively managed, and a recent cost review found the company paying full S3 Standard storage rates for terabytes of data that's rarely accessed anymore, alongside some frequently accessed data mixed in the same bucket. The team wants to reduce storage costs automatically going forward, without risking added latency or retrieval fees for the subset of data still accessed frequently, and without a one-time manual audit of every object's access history. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Apply an S3 Lifecycle rule transitioning all existing objects to S3 Glacier Deep Archive after 0 days."
+      },
+      {
+        "key": "B",
+        "text": "Enable S3 Intelligent-Tiering on the bucket, letting S3 automatically move each object between access tiers based on its own observed access pattern, without a manual audit."
+      },
+      {
+        "key": "C",
+        "text": "Manually review each object's last-accessed timestamp and individually assign a storage class per object."
+      },
+      {
+        "key": "D",
+        "text": "Delete all files that haven't been accessed in the past 12 months."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Intelligent-Tiering directly solves this: it monitors each object's own access pattern automatically and moves it between tiers accordingly, working correctly for a mix of frequently- and rarely-accessed objects in the same bucket, without a manual audit and without retrieval fees or latency penalties for frequently accessed objects.",
+      "incorrect": {
+        "A": "Moving everything immediately to Glacier Deep Archive would impose significant retrieval delays and fees on the subset of data that's still frequently accessed.",
+        "C": "Manually reviewing and assigning storage classes per object is exactly the one-time manual audit effort the team wants to avoid, and doesn't adapt as access patterns change in the future.",
+        "D": "Deleting files based on a blanket 12-month rule risks permanently losing data that might still be needed, and doesn't address the actual cost problem for data that should be retained but tiered more cheaply."
+      }
+    }
+  },
+  {
+    "id": "codedeploy-blue-green-ecs-risky-deployment",
+    "domain": "Reliability",
+    "scenario": "An existing production application on Amazon ECS has caused multiple incidents where a bad deployment took down the entire service simultaneously, because the current deployment process replaces all running tasks with the new version at once, with no automatic rollback if the new version starts failing health checks. The team wants to reduce deployment risk so a bad release only affects a small fraction of traffic and can be automatically rolled back, without changing the application code itself. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continue in-place deployments, but add a manual step requiring someone to watch dashboards closely during every deployment."
+      },
+      {
+        "key": "B",
+        "text": "Switch to a blue/green deployment strategy using AWS CodeDeploy for ECS, shifting traffic to a new task set with automatic rollback triggered by CloudWatch alarms if health checks fail."
+      },
+      {
+        "key": "C",
+        "text": "Reduce the number of ECS tasks running in production to make in-place deployments faster."
+      },
+      {
+        "key": "D",
+        "text": "Deploy less frequently, batching more changes into each release to reduce the total number of risky deployments."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "CodeDeploy's blue/green deployment for ECS provisions a new, separate task set alongside the existing one, shifts traffic to it, and automatically rolls back to the original task set if configured CloudWatch alarms fire, directly eliminating the all-at-once replacement risk without any application code change.",
+      "incorrect": {
+        "A": "Manual dashboard-watching is a human-dependent mitigation, not an automated safeguard, and doesn't reduce the blast radius of a bad deployment.",
+        "C": "Fewer tasks makes an in-place deployment complete faster but doesn't change the fundamental all-at-once replacement risk or add automatic rollback.",
+        "D": "Batching more changes into less frequent releases actually increases the risk and blast radius of each individual deployment."
+      }
+    }
+  },
+  {
+    "id": "drs-existing-single-region-app-dr-posture",
+    "domain": "Reliability",
+    "scenario": "An existing production application runs entirely in a single AWS Region with no disaster recovery plan at all. Following a recent close call during a regional service disruption, leadership now requires a DR solution providing continuous, low-cost, block-level replication of the application's servers to a second Region, with the ability to launch fully recovered instances in that second Region within minutes if ever needed, but without paying for a fully running duplicate environment sitting idle in the second Region the rest of the time. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually take AMI snapshots of the production instances every night and copy them to the second Region."
+      },
+      {
+        "key": "B",
+        "text": "AWS Elastic Disaster Recovery (DRS), continuously replicating the application's servers at the block level into a low-cost staging area in the second Region, ready for fast, automated recovery launch when needed."
+      },
+      {
+        "key": "C",
+        "text": "Deploy a full duplicate of the production environment in the second Region, running at full capacity at all times."
+      },
+      {
+        "key": "D",
+        "text": "Rely on the second Region's default AWS infrastructure resilience without any explicit application-level replication."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS Elastic Disaster Recovery is purpose-built for this: continuous, low-cost, block-level replication into a minimal staging area, with the ability to launch fully recovered, right-sized instances within minutes during an actual disaster, without running a full duplicate environment continuously.",
+      "incorrect": {
+        "A": "Nightly AMI snapshots provide only a point-in-time copy with up to 24 hours of potential data loss and require manual launch and configuration during recovery.",
+        "C": "Running a full duplicate environment continuously at full capacity is the Multi-Site Active/Active pattern, far more expensive than needed and explicitly contradicting the cost requirement.",
+        "D": "AWS's underlying infrastructure resilience protects against AWS's own infrastructure failures, but does nothing to provide cross-region recovery for a single-region-deployed application."
+      }
+    }
+  },
+  {
+    "id": "systems-manager-explorer-opscenter-centralized-ops",
+    "domain": "Operational Excellence",
+    "scenario": "An existing large EC2 fleet across multiple accounts generates operational issues, such as failed patch attempts, CloudWatch alarms, and Config non-compliance findings, currently scattered across many different consoles and accounts, making it hard for the operations team to get a single prioritized view of what needs attention across the whole fleet. What should they implement to centralize and prioritize this operational information?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have each account's team maintain their own separate spreadsheet of open operational issues."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Systems Manager Explorer for a centralized, cross-account operational dashboard, and OpsCenter to aggregate related operational issues from CloudWatch, Config, and other sources into a single, prioritized view for investigation."
+      },
+      {
+        "key": "C",
+        "text": "Increase the frequency of manual console checks across every account."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Cost Explorer to identify which accounts have the most operational issues."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Systems Manager Explorer provides a centralized, cross-account operational health dashboard, while OpsCenter aggregates related operational issues from multiple sources into unified, prioritized OpsItems, directly solving the scattered-across-consoles problem with one centralized view.",
+      "incorrect": {
+        "A": "Separate spreadsheets per account is exactly the scattered, uncentralized state the team wants to escape, with no automated aggregation or prioritization at all.",
+        "C": "More frequent manual checks doesn't centralize anything — the information remains scattered across separate consoles and accounts, just checked more often.",
+        "D": "Cost Explorer analyzes cost and usage data, not operational health issues like failed patches or alarm states."
+      }
+    }
+  },
+  {
+    "id": "nat-gateway-cost-vpc-endpoint-retrofit",
+    "domain": "Cost Optimization",
+    "scenario": "An existing application running in a private subnet has been generating unexpectedly high NAT Gateway data processing charges, and a cost investigation reveals the vast majority of that traffic is actually just the application reading and writing large volumes of data to an S3 bucket in the same Region, currently routed out through the NAT Gateway to reach S3's public endpoint. What is the most direct way to reduce this specific cost, without changing the application's code?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Replace the NAT Gateway with several smaller NAT Gateways to distribute the data processing charges."
+      },
+      {
+        "key": "B",
+        "text": "Add a Gateway VPC endpoint for S3 to the route table, so traffic destined for S3 routes directly over AWS's network instead of through the NAT Gateway."
+      },
+      {
+        "key": "C",
+        "text": "Move the application to a public subnet with a public IP address to bypass the NAT Gateway entirely."
+      },
+      {
+        "key": "D",
+        "text": "Compress all data before sending it to S3 to reduce the volume of NAT Gateway data processing."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Adding a Gateway endpoint for S3 and updating the route table causes S3-bound traffic to route directly over AWS's private network at no per-GB cost, removing that traffic from the NAT Gateway entirely, with zero application code changes needed.",
+      "incorrect": {
+        "A": "Splitting into multiple smaller NAT Gateways doesn't reduce the total data volume processed or its associated per-GB charges — it just spreads the same total cost across more gateways.",
+        "C": "Moving the application to a public subnet with a public IP significantly changes its security posture and isn't necessary when a Gateway endpoint solves the cost problem while keeping the application private.",
+        "D": "Compressing data reduces total bytes transferred somewhat, but requires application code changes, which is explicitly ruled out."
+      }
+    }
+  },
+  {
+    "id": "sqs-load-leveling-retrofit-overload",
+    "domain": "Reliability",
+    "scenario": "An existing application has a web tier that synchronously calls a downstream image-processing service directly for every uploaded image, and during traffic spikes the image-processing service becomes overwhelmed and starts failing requests, causing failures to cascade back to users even though most uploads don't need to be processed instantly. The team wants to smooth out these bursts so the image-processing service always receives work at a steady, manageable rate, without permanently over-provisioning the processing service for its worst-case burst capacity. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Permanently over-provision the image-processing service to handle the highest observed burst rate at all times."
+      },
+      {
+        "key": "B",
+        "text": "Insert an Amazon SQS queue between the web tier and the image-processing service, having the web tier enqueue image-processing jobs instead of calling the service directly, and having the processing service consume messages at its own sustainable rate."
+      },
+      {
+        "key": "C",
+        "text": "Add a CloudFront distribution in front of the web tier to cache image upload requests."
+      },
+      {
+        "key": "D",
+        "text": "Have the web tier retry failed calls to the image-processing service with exponential backoff, without changing the overall architecture."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Inserting an SQS queue decouples the producer from the consumer, buffering bursts so the processing service can pull and process work at its own steady, sustainable rate, the standard load-leveling pattern for exactly this problem without permanently over-provisioning.",
+      "incorrect": {
+        "A": "Permanently over-provisioning for worst-case bursts is exactly the cost the team wants to avoid, and still doesn't decouple the two tiers.",
+        "C": "Image uploads are typically unique, non-cacheable requests — CDN caching doesn't apply to this write-heavy, per-upload processing workload.",
+        "D": "Retrying with exponential backoff can help with transient failures somewhat, but doesn't change the synchronous, tightly-coupled architecture causing the overload."
+      }
+    }
+  },
+  {
+    "id": "cloudformation-drift-detection-stacksets-remediation",
+    "domain": "Operational Excellence",
+    "scenario": "A company manages baseline security resources, such as a specific IAM role, a CloudWatch alarm, and an S3 bucket policy, across 40 accounts using CloudFormation StackSets, but has discovered that several accounts' resources have been manually modified outside of CloudFormation over time, causing inconsistency with the intended baseline. The team wants an ongoing way to detect and correct this drift across all 40 accounts. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Manually compare each account's actual resource configuration against the original CloudFormation template on a recurring basis."
+      },
+      {
+        "key": "B",
+        "text": "Use CloudFormation drift detection across the StackSet's stack instances to identify accounts where actual resource configuration has diverged from the template, and update the StackSet to reapply the intended configuration to drifted instances."
+      },
+      {
+        "key": "C",
+        "text": "Delete and recreate the StackSet from scratch in every account whenever drift is suspected."
+      },
+      {
+        "key": "D",
+        "text": "Disable the ability for anyone to make manual changes in any of the 40 accounts using an SCP that denies all write actions."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "CloudFormation drift detection can be run across a StackSet's stack instances to identify exactly which accounts have diverged from the template, and updating the StackSet brings drifted instances back into the intended, consistent baseline configuration.",
+      "incorrect": {
+        "A": "Manual comparison across 40 accounts doesn't scale and isn't necessary — CloudFormation already provides drift detection natively.",
+        "C": "Deleting and recreating the entire StackSet from scratch is a drastic, disruptive overreaction compared to targeted drift detection and remediation.",
+        "D": "An SCP denying all write actions would break legitimate operational work across all 40 accounts entirely, far too broad a restriction for the stated goal."
+      }
+    }
+  },
+  {
+    "id": "dax-existing-read-heavy-dynamodb-performance",
+    "domain": "Database",
+    "scenario": "An existing DynamoDB table backing a popular product catalog experiences very high read traffic, with the same small set of popular items being read repeatedly by many users, and the team wants to reduce read latency from single-digit milliseconds down to microsecond levels for these repeated reads, while also reducing DynamoDB read capacity consumption, without changing the application's DynamoDB API calls significantly. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Increase the table's provisioned read capacity units significantly."
+      },
+      {
+        "key": "B",
+        "text": "Add Amazon DynamoDB Accelerator (DAX) as an in-memory caching layer in front of the table, using the DAX client to transparently cache frequently read items."
+      },
+      {
+        "key": "C",
+        "text": "Migrate the product catalog data to Amazon RDS, which has lower read latency than DynamoDB."
+      },
+      {
+        "key": "D",
+        "text": "Enable DynamoDB Streams and have a separate service maintain a denormalized read-optimized copy of the data."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "DAX is a purpose-built, fully managed, write-through in-memory cache for DynamoDB, reducing read latency to microseconds for repeated reads and reducing read capacity consumption, using a client that's largely API-compatible with the standard DynamoDB SDK.",
+      "incorrect": {
+        "A": "Increasing provisioned read capacity increases cost and throughput ceiling, but doesn't reduce per-request latency down to microseconds.",
+        "C": "Migrating to RDS is a large re-architecture effort and doesn't inherently guarantee microsecond-level latency for repeated reads the way a purpose-built cache does.",
+        "D": "Building a custom denormalized read-copy service via Streams is significantly more engineering effort to build and maintain than adding DAX, which already solves this exact problem as a managed service."
+      }
+    }
+  },
+  {
+    "id": "trusted-advisor-lambda-automated-cleanup",
+    "domain": "Cost Optimization",
+    "scenario": "A cost review reveals that an existing AWS account has accumulated significant waste over time, including unattached EBS volumes, idle load balancers with no registered targets, and unused Elastic IP addresses, all continuing to incur charges. The team wants an ongoing, largely automated way to identify this class of waste and safely clean it up on a recurring basis, rather than a one-time manual cleanup that will just accumulate again. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Perform a one-time manual review and cleanup of the current waste, without any ongoing process."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Trusted Advisor's cost optimization checks to identify this class of underutilized or idle resources on a recurring basis, and trigger a Lambda function via EventBridge on a schedule to automatically clean up resources matching well-understood, safe criteria."
+      },
+      {
+        "key": "C",
+        "text": "Grant the finance team console access to manually delete any resource that looks unused, whenever they notice it."
+      },
+      {
+        "key": "D",
+        "text": "Disable the ability to create EBS volumes, load balancers, and Elastic IPs entirely, to prevent any future waste."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Trusted Advisor's cost optimization checks already surface exactly this class of idle resources on a recurring basis, and pairing that with a scheduled Lambda function for safe, well-defined automated cleanup criteria addresses the recurring nature of the problem.",
+      "incorrect": {
+        "A": "A one-time manual cleanup addresses only the current waste and does nothing to prevent it from accumulating again going forward.",
+        "C": "Ad hoc manual deletion whenever something looks unused is risky and isn't a systematic, recurring, criteria-based process.",
+        "D": "Disabling the ability to create these resource types entirely would break legitimate, necessary use of them, a wildly disproportionate response."
+      }
+    }
+  },
+  {
+    "id": "adot-existing-app-observability-gaps",
+    "domain": "Operational Excellence",
+    "scenario": "An existing microservices application currently uses several different, vendor-specific tracing and metrics libraries across different services, since each team chose their own, making it difficult to get a consistent, correlated view of a request's journey across the whole system. The company wants to standardize on an open, vendor-neutral instrumentation approach that can export data to multiple backends, including AWS X-Ray and CloudWatch, or potentially other tools later, without locking into one vendor's proprietary SDK. What should they adopt?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Standardize on AWS X-Ray's proprietary SDK across every service, since it's the only option that integrates with AWS services."
+      },
+      {
+        "key": "B",
+        "text": "Adopt the AWS Distro for OpenTelemetry (ADOT), instrumenting each service with the vendor-neutral OpenTelemetry standard, and configure the ADOT Collector to export trace and metric data to X-Ray, CloudWatch, or other supported backends."
+      },
+      {
+        "key": "C",
+        "text": "Have each team continue using their own preferred tracing library, and build a custom translation layer to reconcile the different formats after the fact."
+      },
+      {
+        "key": "D",
+        "text": "Remove all existing instrumentation and rely solely on VPC Flow Logs for observability going forward."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "ADOT is AWS's supported distribution of the vendor-neutral OpenTelemetry standard, letting every service instrument consistently against one open specification while the Collector exports to X-Ray, CloudWatch, or other backends, avoiding proprietary lock-in.",
+      "incorrect": {
+        "A": "Standardizing on X-Ray's own proprietary SDK unifies things around one library, but it's exactly the vendor lock-in the requirement wants to avoid.",
+        "C": "Building a custom translation layer across multiple existing proprietary libraries is significant ongoing engineering effort to work around a problem one open standard avoids entirely.",
+        "D": "VPC Flow Logs capture network-layer metadata, not application-level distributed traces or custom metrics — removing existing instrumentation would be a loss of observability, not a fix."
+      }
+    }
+  },
+  {
+    "id": "mainframe-modernization-cobol-migration",
+    "domain": "Migration Strategy",
+    "scenario": "A company runs a critical, decades-old mainframe application written in COBOL that processes daily batch settlement jobs, and wants to migrate it off the mainframe to AWS while preserving the existing business logic as much as possible, rather than fully rewriting the application from scratch, given the risk and cost of a full rewrite for such a critical system. What AWS service is purpose-built for this kind of migration?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Application Migration Service (MGN)"
+      },
+      {
+        "key": "B",
+        "text": "AWS Mainframe Modernization"
+      },
+      {
+        "key": "C",
+        "text": "AWS Database Migration Service (DMS)"
+      },
+      {
+        "key": "D",
+        "text": "AWS App2Container"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS Mainframe Modernization provides purpose-built tooling, including automated code conversion and replatforming options, specifically for migrating mainframe workloads like COBOL applications to AWS, preserving existing business logic rather than requiring a full rewrite.",
+      "incorrect": {
+        "A": "MGN rehosts servers or VMs, typically x86-based, as-is to EC2 — it isn't designed to migrate specialized mainframe architectures or COBOL runtime environments.",
+        "C": "DMS migrates database engines — a mainframe application involves far more than just its database, including batch job scheduling and COBOL business logic, which DMS doesn't address.",
+        "D": "App2Container containerizes existing Java or .NET applications running on standard servers — it isn't built for mainframe COBOL workloads at all."
+      }
+    }
+  },
+  {
+    "id": "hadoop-spark-migration-to-emr",
+    "domain": "Migration Strategy",
+    "scenario": "A company runs a large on-premises Hadoop and Spark cluster for batch data processing, which is expensive to operate and requires significant ongoing effort to patch, scale, and manage the underlying servers. As part of a broader migration and modernization effort, the company wants to move these big-data workloads to AWS using the same open-source frameworks their existing jobs already depend on, without rewriting those jobs, while eliminating the operational burden of managing the underlying cluster infrastructure. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Rewrite all batch jobs to use AWS Glue's proprietary ETL scripting model instead."
+      },
+      {
+        "key": "B",
+        "text": "Amazon EMR, running the same open-source big-data frameworks such as Spark, Hive, and Presto on a managed, elastically scalable cluster."
+      },
+      {
+        "key": "C",
+        "text": "Amazon Redshift, migrating all data-processing logic into SQL-based transformations."
+      },
+      {
+        "key": "D",
+        "text": "AWS Batch, containerizing each Spark job to run as an independent batch job."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "EMR runs the actual open-source frameworks the existing jobs already depend on, on a managed, elastically scalable cluster, letting jobs migrate largely unchanged while eliminating the burden of managing underlying servers.",
+      "incorrect": {
+        "A": "Rewriting to Glue's ETL scripting model is a significant re-engineering effort and abandons the existing job investment.",
+        "C": "Redshift is a SQL-based data warehouse; migrating existing Spark or Hive job logic into SQL transformations is a substantial rewrite, not a lift of existing jobs.",
+        "D": "AWS Batch schedules and runs containerized batch jobs generically, but doesn't provide a managed Hadoop or Spark cluster environment itself."
+      }
+    }
+  },
+  {
+    "id": "windows-file-shares-fsx-windows-ad-migration",
+    "domain": "Migration Strategy",
+    "scenario": "A company is migrating its on-premises Windows file servers, used heavily by desktop applications via SMB with existing Active Directory-based folder permissions, to AWS as part of a broader data center exit, and wants the migrated file shares to preserve existing Windows-native features such as the SMB protocol, NTFS ACLs, and Active Directory-integrated permissions, with minimal changes to how end users and applications access files. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon EFS, since it's AWS's primary managed file storage service."
+      },
+      {
+        "key": "B",
+        "text": "Amazon FSx for Windows File Server, integrated with the company's existing Active Directory for authentication and NTFS-based permissions."
+      },
+      {
+        "key": "C",
+        "text": "Amazon S3, since object storage can serve as a drop-in replacement for any file share."
+      },
+      {
+        "key": "D",
+        "text": "Amazon FSx for Lustre, since it offers the highest throughput among AWS's managed file systems."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "FSx for Windows File Server is purpose-built as a native Windows file share replacement: it natively speaks SMB, supports NTFS ACLs, and integrates directly with existing Active Directory, preserving the exact existing access model with minimal changes.",
+      "incorrect": {
+        "A": "EFS is a Linux-oriented, NFS-based file system; it doesn't natively support SMB, NTFS ACLs, or direct Active Directory-based Windows permissions.",
+        "C": "S3 is an object store accessed via HTTP APIs, not a POSIX or SMB file system, and isn't a drop-in replacement for SMB-based Windows file shares.",
+        "D": "FSx for Lustre targets high-throughput HPC and ML workloads over a Lustre-native interface — it doesn't provide SMB, NTFS, or Active-Directory-integrated Windows file sharing."
+      }
+    }
+  },
+  {
+    "id": "migration-evaluator-business-case",
+    "domain": "Migration Strategy",
+    "scenario": "Before committing significant budget to a large-scale migration, a company's leadership wants a data-driven, right-sized cost projection comparing their current on-premises infrastructure spend against the projected AWS cost of an equivalent environment, based on actual utilization data collected from their existing servers, to build a business case for the migration. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Pricing Calculator, manually entering estimated future AWS resource specifications."
+      },
+      {
+        "key": "B",
+        "text": "AWS Migration Evaluator, which collects on-premises inventory and utilization data to build a data-driven business case comparing current costs to a right-sized AWS environment."
+      },
+      {
+        "key": "C",
+        "text": "AWS Cost Explorer, since it already shows historical AWS costs."
+      },
+      {
+        "key": "D",
+        "text": "AWS Trusted Advisor, since it provides cost optimization recommendations."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Migration Evaluator is purpose-built for this pre-migration business-case phase: it collects actual on-premises inventory and utilization data and builds a data-driven, right-sized cost comparison against a projected AWS environment.",
+      "incorrect": {
+        "A": "The Pricing Calculator estimates AWS costs for resources specified manually, but doesn't collect actual on-premises utilization data or automatically right-size based on real infrastructure.",
+        "C": "Cost Explorer shows historical AWS cost and usage, with no visibility into on-premises infrastructure, so it can't build a comparison business case for a migration that hasn't happened yet.",
+        "D": "Trusted Advisor provides recommendations for existing AWS resources already running in the account — it doesn't analyze on-premises infrastructure."
+      }
+    }
+  },
+  {
+    "id": "six-rs-retire-vs-retain",
+    "domain": "Migration Strategy",
+    "scenario": "During a large-scale application portfolio assessment ahead of a data center exit, the team identifies two categories of applications: a set of applications no longer used by any business unit with zero active users, and a small set of highly specialized, deeply regulated applications that cannot legally or technically be moved to the cloud in the current timeframe and must remain running exactly where they are for now. Which two of the 6 R's migration strategies apply to these two categories respectively?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Rehost for the first category, Replatform for the second."
+      },
+      {
+        "key": "B",
+        "text": "Retire for the first category, Retain for the second."
+      },
+      {
+        "key": "C",
+        "text": "Repurchase for the first category, Refactor for the second."
+      },
+      {
+        "key": "D",
+        "text": "Retain for the first category, Retire for the second."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Retire is the strategy for decommissioning applications with no remaining users or business value, and Retain is the strategy for explicitly keeping an application running as-is on-premises for now, typically due to constraints like regulatory requirements — matching each category to its intended strategy exactly.",
+      "incorrect": {
+        "A": "Rehost and Replatform both describe actually moving an application to AWS in some form — neither fits decommissioning unused apps or deliberately keeping an application on-premises.",
+        "C": "Repurchase and Refactor both describe replacing or re-architecting an application for AWS — neither applies to an app being decommissioned or one staying on-premises unchanged.",
+        "D": "This reverses the correct mapping — Retain fits keeping a regulated app in place, and Retire fits decommissioning unused apps, not the other way around."
+      }
+    }
+  },
+  {
+    "id": "modernize-batch-mainframe-job-step-functions-serverless",
+    "domain": "Modernization",
+    "scenario": "As part of a modernization initiative following an initial mainframe migration, a company wants to redesign one of its nightly batch settlement jobs, which involves several sequential steps with conditional branching and occasional manual approval before the final step, to run as a modern, serverless, event-driven workflow on AWS, replacing the legacy job scheduler entirely. What combination of services fits this redesign?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A single large AWS Lambda function containing all the sequential steps and conditional logic in one script."
+      },
+      {
+        "key": "B",
+        "text": "AWS Step Functions orchestrating individual AWS Lambda functions for each step, using its built-in support for sequential steps, conditional branching, and a wait-for-callback pattern for the manual approval step."
+      },
+      {
+        "key": "C",
+        "text": "Amazon EC2 instances running a cron-scheduled shell script that calls each step in sequence."
+      },
+      {
+        "key": "D",
+        "text": "Amazon SQS queues chained together, with each queue's consumer triggering the next queue in the chain."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Step Functions is purpose-built for this kind of multi-step workflow: Lambda functions handle each discrete step, Choice states handle conditional branching, and a wait-for-callback pattern handles pausing for manual approval before proceeding, replacing a legacy job scheduler with a fully managed, serverless workflow.",
+      "incorrect": {
+        "A": "A single monolithic Lambda function handling all steps and a manual approval wait would need to work around Lambda's execution time limits and lacks the built-in visibility and pause and resume semantics Step Functions provides.",
+        "C": "EC2 instances running a cron-scheduled script reintroduces server management the modernization effort is trying to eliminate, and doesn't natively support manual-approval pausing.",
+        "D": "Chaining SQS queues can approximate sequential processing, but SQS provides no native conditional branching or manual-approval-pause semantics."
+      }
+    }
+  },
+  {
+    "id": "launch-wizard-for-sap",
+    "domain": "Migration Strategy",
+    "scenario": "A company is migrating its on-premises SAP S/4HANA environment to AWS and wants a guided, automated way to size, provision, and configure the underlying AWS infrastructure, including EC2 instances, storage, and networking, according to SAP's own best-practice architecture recommendations, without manually researching and assembling every component from scratch. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS CloudFormation, writing a custom template for SAP infrastructure from scratch based on general EC2 best practices."
+      },
+      {
+        "key": "B",
+        "text": "AWS Launch Wizard, which provides a guided workflow specifically for sizing and deploying SAP workloads on AWS according to SAP's own best practices."
+      },
+      {
+        "key": "C",
+        "text": "AWS Elastic Beanstalk, deploying SAP as a standard web application environment."
+      },
+      {
+        "key": "D",
+        "text": "AWS Migration Evaluator, since it estimates the AWS costs of any migrated workload including SAP."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS Launch Wizard specifically provides a guided deployment wizard for SAP among other named workloads, automatically sizing and provisioning infrastructure per SAP's own best-practice architecture guidance.",
+      "incorrect": {
+        "A": "A custom CloudFormation template built from general EC2 best practices would require manually researching and encoding SAP-specific sizing and architecture guidance.",
+        "C": "Elastic Beanstalk is designed for standard web application deployment patterns, not SAP's specific infrastructure requirements.",
+        "D": "Migration Evaluator estimates cost based on utilization data — it doesn't provision or configure infrastructure according to SAP-specific best practices."
+      }
+    }
+  },
+  {
+    "id": "on-prem-ad-migration-aws-managed-microsoft-ad",
+    "domain": "Migration Strategy",
+    "scenario": "A company is migrating a large number of Windows-based applications and file servers to AWS, all of which currently authenticate against an on-premises Active Directory domain, and wants a fully managed Microsoft Active Directory running natively in AWS that can either establish a trust relationship with the existing on-premises AD or be used as the primary directory going forward, without building, patching, or managing domain controllers themselves. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AD Connector, which proxies authentication requests to the existing on-premises AD without creating a new directory in AWS."
+      },
+      {
+        "key": "B",
+        "text": "AWS Directory Service for Microsoft Active Directory, a fully managed AD running natively in AWS, capable of a trust relationship with the on-premises domain or standing alone."
+      },
+      {
+        "key": "C",
+        "text": "Amazon Cognito user pools, since they can serve as a directory for Windows-based application authentication."
+      },
+      {
+        "key": "D",
+        "text": "IAM Identity Center as a full replacement for Active Directory entirely."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "AWS Managed Microsoft AD provides an actual, fully managed Microsoft AD directory running natively in AWS, with AWS handling domain controller patching, and it natively supports a two-way trust relationship with an existing on-premises AD domain.",
+      "incorrect": {
+        "A": "AD Connector is a proxy to an existing on-premises AD — it doesn't create an actual directory in AWS itself, so it can't stand alone as the primary directory going forward.",
+        "C": "Cognito user pools serve web and mobile app authentication use cases; they aren't a Windows-integrated Active Directory replacement for domain-joined Windows applications using Kerberos or NTLM.",
+        "D": "IAM Identity Center provides access to AWS accounts and applications for workforce identities, but isn't a replacement for Active Directory's domain services that the migrated Windows applications depend on."
+      }
+    }
+  },
+  {
+    "id": "mgn-vs-drs-committed-vs-undetermined-cutover",
+    "domain": "Migration Strategy",
+    "scenario": "A company is planning two separate migrations: a group of servers with a firmly committed cutover date already scheduled 6 weeks from now as part of a planned migration wave, and a separate group of critical servers where the company wants continuous, low-cost replication to AWS as an insurance policy in case of an unplanned on-premises failure, but has no committed date for actually cutting over, possibly running in this replicated, standby state indefinitely. Which service fits each scenario respectively?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Application Migration Service (MGN) for the committed cutover, AWS Elastic Disaster Recovery (DRS) for the indefinite standby posture."
+      },
+      {
+        "key": "B",
+        "text": "AWS Elastic Disaster Recovery (DRS) for the committed cutover, AWS Application Migration Service (MGN) for the indefinite standby posture."
+      },
+      {
+        "key": "C",
+        "text": "AWS Application Migration Service (MGN) for both scenarios, since it's the newer, recommended service for all use cases."
+      },
+      {
+        "key": "D",
+        "text": "AWS Database Migration Service (DMS) for both scenarios, since both involve replicating server state continuously."
+      }
+    ],
+    "correctKey": "A",
+    "explanation": {
+      "correct": "MGN and DRS use the same underlying continuous block-level replication technology, but are positioned for different intents: MGN is used when there's a committed migration cutover date, while DRS is specifically positioned for ongoing disaster-recovery readiness with no committed cutover date, at DR-appropriate low cost.",
+      "incorrect": {
+        "B": "This reverses the correct mapping — DRS fits the standby, no-committed-date DR use case, and MGN fits the committed-cutover migration use case.",
+        "C": "While MGN and DRS share underlying replication technology, AWS specifically positions and prices DRS for indefinite standby or DR use, so using MGN for that scenario isn't the intended, cost-optimized fit.",
+        "D": "DMS replicates database engines specifically, not entire server or VM instances at the block level — the wrong tool for either scenario described."
+      }
+    }
+  },
+  {
+    "id": "oracle-rac-byol-ec2-vs-rds",
+    "domain": "Migration Strategy",
+    "scenario": "A company is migrating a large on-premises Oracle database that uses Oracle Real Application Clusters (RAC) for high availability and has existing Oracle licenses it wants to bring to AWS under a Bring-Your-Own-License model to avoid paying for new licenses. The company also needs to retain full control over the database's underlying OS and Oracle configuration for specific performance-tuning reasons the DBA team requires. Which migration approach fits these constraints?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Migrate to Amazon RDS for Oracle, using the License Included model."
+      },
+      {
+        "key": "B",
+        "text": "Migrate to Amazon RDS for Oracle, using the Bring-Your-Own-License model."
+      },
+      {
+        "key": "C",
+        "text": "Migrate to Amazon EC2, self-managing the Oracle RAC database directly, using existing licenses under Bring-Your-Own-License."
+      },
+      {
+        "key": "D",
+        "text": "Migrate to Amazon Aurora, converting the Oracle database to a PostgreSQL-compatible engine."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "RDS does not support Oracle RAC configurations, and RDS's managed model doesn't give DBAs the low-level OS and database configuration control described, so a database requiring RAC and full OS-level control must be self-managed on EC2, where BYOL licensing is also fully supported.",
+      "incorrect": {
+        "A": "License Included pricing bundles a new Oracle license into the RDS cost, which the company explicitly wants to avoid since it already owns licenses it wants to reuse.",
+        "B": "RDS for Oracle does support a BYOL model, but RDS as a managed service does not support Oracle RAC configurations and doesn't grant the low-level OS or configuration control the DBA team requires, ruling out RDS regardless of licensing model.",
+        "D": "Converting to Aurora PostgreSQL is a heterogeneous migration requiring significant application and query rework, and doesn't preserve the RAC architecture or existing Oracle licensing investment."
+      }
+    }
   }
 ]
