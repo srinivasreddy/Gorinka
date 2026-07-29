@@ -13,7 +13,7 @@ import { useStudyQueue } from "@/lib/useStudyQueue";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import { useCardSearch } from "@/lib/useCardSearch";
-import { getCategory } from "@/lib/cards";
+import { getCategory, findCardByFront } from "@/lib/cards";
 import type { Rating } from "@/lib/srs";
 import type { Card as CardData } from "@/lib/cards";
 
@@ -41,15 +41,31 @@ export default function CategoryFlashcardsPage() {
   const searchResults = useCardSearch(searchQuery, cards);
   const isSearching = searchQuery.trim().length > 0;
 
-  // A card jumped to from search — reviewed independently of the due-queue
-  // position, but still through the same reveal/rate interaction.
-  const [lookupCard, setLookupCard] = useState<CardData | null>(null);
+  // A stack of cards reached via search or via in-card "see also" hyperlinks
+  // -- reviewed independently of the due-queue position, but still through
+  // the same reveal/rate interaction. Drilling into a link pushes onto the
+  // stack; Back pops one level, landing on the parent card (already
+  // revealed) rather than exiting straight back to the search results.
+  const [lookupStack, setLookupStack] = useState<CardData[]>([]);
   const [lookupRevealed, setLookupRevealed] = useState(false);
+  const lookupCard = lookupStack[lookupStack.length - 1] ?? null;
   const isLookup = lookupCard !== null;
 
-  function returnToResults() {
-    setLookupCard(null);
+  function startLookup(card: CardData) {
+    setLookupStack([card]);
     setLookupRevealed(false);
+  }
+
+  function pushLookup(front: string) {
+    const target = findCardByFront(front);
+    if (!target) return;
+    setLookupStack((stack) => [...stack, target]);
+    setLookupRevealed(false);
+  }
+
+  function popLookup() {
+    setLookupStack((stack) => stack.slice(0, -1));
+    setLookupRevealed(true);
   }
 
   function handleRate(rating: Rating) {
@@ -60,7 +76,7 @@ export default function CategoryFlashcardsPage() {
   function handleLookupRate(rating: Rating) {
     if (!lookupCard) return;
     rateCard(lookupCard, rating);
-    returnToResults();
+    popLookup();
   }
 
   const activeCard = isLookup ? lookupCard : isSearching ? null : currentCard;
@@ -80,7 +96,7 @@ export default function CategoryFlashcardsPage() {
   }
 
   function activeGoBack() {
-    if (isLookup) returnToResults();
+    if (isLookup) popLookup();
     else if (!isSearching) goBack();
   }
 
@@ -165,10 +181,7 @@ export default function CategoryFlashcardsPage() {
               query={searchQuery}
               onQueryChange={setSearchQuery}
               results={searchResults}
-              onSelect={(card) => {
-                setLookupCard(card);
-                setLookupRevealed(false);
-              }}
+              onSelect={startLookup}
             />
           </div>
         )}
@@ -177,11 +190,11 @@ export default function CategoryFlashcardsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={returnToResults}
+            onClick={popLookup}
             className="mb-4 -ml-2 text-muted-foreground"
           >
             <ArrowLeft />
-            Back to results
+            {lookupStack.length > 1 ? "Back" : "Back to results"}
           </Button>
         )}
 
@@ -194,6 +207,7 @@ export default function CategoryFlashcardsPage() {
                 revealed={activeIsHistory || activeRevealed}
                 isHistory={activeIsHistory}
                 onRate={activeOnRate}
+                onCardLink={pushLookup}
               />
             </div>
             <CardNavControls

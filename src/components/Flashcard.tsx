@@ -35,9 +35,25 @@ interface FlashcardProps {
   revealed: boolean;
   isHistory: boolean;
   onRate: (rating: Rating) => void;
+  onCardLink?: (front: string) => void;
 }
 
-export function Flashcard({ front, back, revealed, isHistory, onRate }: FlashcardProps) {
+export function Flashcard({
+  front,
+  back,
+  revealed,
+  isHistory,
+  onRate,
+  onCardLink,
+}: FlashcardProps) {
+  function handleBackClick(event: React.MouseEvent<HTMLDivElement>) {
+    const target = (event.target as HTMLElement).closest<HTMLElement>("[data-card-link]");
+    if (!target) return;
+    event.preventDefault();
+    const linkedFront = target.dataset.cardLink;
+    if (linkedFront && onCardLink) onCardLink(linkedFront);
+  }
+
   return (
     <Card className="min-h-65">
       <CardContent className="flex h-full flex-col">
@@ -53,7 +69,8 @@ export function Flashcard({ front, back, revealed, isHistory, onRate }: Flashcar
           />
           {revealed && (
             <div
-              className="mt-4 text-base leading-relaxed text-muted-foreground [&>p]:mt-2.5 [&>p:first-child]:mt-0 [&_li]:mt-1 [&_strong]:font-semibold [&_strong]:text-foreground [&_ul]:mt-2.5 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-foreground [&_pre]:mt-2.5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[0.8em] [&_pre_code]:leading-relaxed"
+              onClick={handleBackClick}
+              className="mt-4 text-base leading-relaxed text-muted-foreground [&>p]:mt-2.5 [&>p:first-child]:mt-0 [&_li]:mt-1 [&_strong]:font-semibold [&_strong]:text-foreground [&_ul]:mt-2.5 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-foreground [&_pre]:mt-2.5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[0.8em] [&_pre_code]:leading-relaxed [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:no-underline"
               dangerouslySetInnerHTML={{ __html: back }}
             />
           )}

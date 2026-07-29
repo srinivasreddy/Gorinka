@@ -55,6 +55,15 @@ export function getCategory(slug: string): CardCategory | undefined {
   return CATEGORY_BY_SLUG.get(slug);
 }
 
+const CARD_BY_FRONT = new Map(CATEGORIES.flatMap((c) => c.cards).map((card) => [card.front, card]));
+
+// Looks up a card by its exact front text, regardless of which category
+// file it's filed under -- used to resolve in-card hyperlinks (data-card-link)
+// that reference another card as further reading.
+export function findCardByFront(front: string): Card | undefined {
+  return CARD_BY_FRONT.get(front);
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }
