@@ -1086,5 +1086,517 @@
         "D": "Terraform could achieve similar programmatic IaC goals, but it isn't natively CloudFormation-based — it uses its own state file and engine, not CloudFormation stacks — while the requirement is specifically to retain CloudFormation's own stack management underneath, which only CDK provides."
       }
     }
+  },
+  {
+    "id": "aurora-global-database-vs-cross-region-replicas",
+    "domain": "Database",
+    "scenario": "A new global news publishing platform needs a primary read-write Region (us-east-1) plus low-latency read access for users in ap-southeast-1 and eu-west-1, with typical replication lag under 1 second, and the ability to promote a secondary Region to full read-write within about a minute if the primary Region fails — using a standard MySQL-compatible relational engine. Which should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon RDS for MySQL with cross-region read replicas"
+      },
+      {
+        "key": "B",
+        "text": "Amazon Aurora MySQL-Compatible Global Database"
+      },
+      {
+        "key": "C",
+        "text": "Amazon DynamoDB Global Tables, redesigning the schema from relational to NoSQL"
+      },
+      {
+        "key": "D",
+        "text": "An Aurora MySQL Multi-AZ cluster, with ongoing replication to other Regions handled by AWS DMS replication tasks"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Aurora Global Database replicates at the storage layer with typical lag under 1 second — well below standard logical replication — and its managed failover is purpose-built to promote a secondary Region to full read-write in about a minute, all while keeping a standard MySQL-compatible relational engine.",
+      "incorrect": {
+        "A": "RDS cross-region read replicas use MySQL binlog-based logical replication, which typically has higher and more variable lag than Aurora Global Database's storage-level replication, and manual promotion isn't optimized for a roughly one-minute RTO.",
+        "C": "Redesigning the schema from relational to NoSQL is a far larger effort than needed when Aurora Global Database already meets the relational and low-latency global-read requirements without any data model change.",
+        "D": "DMS is a migration and one-off/ongoing replication tool, not a purpose-built multi-region high-availability solution — it lacks Aurora Global Database's managed failover tooling and sub-second replication lag guarantee."
+      }
+    }
+  },
+  {
+    "id": "cross-account-cicd-pipeline-build-once-promote",
+    "domain": "DevOps & CI/CD",
+    "scenario": "A company is designing a new CI/CD pipeline for an application spanning three separate AWS accounts (Dev, Test, Prod) under one Organization for isolation. Requirements:\n\n- The pipeline must build once and promote the same immutable artifact through Dev, Test, and Prod, never rebuilding at each stage.\n- Deploying to the Prod account must not require long-lived IAM credentials for the Prod account to be stored in the CI/CD tooling account.\n- A manual approval gate must exist before deployment to Prod.\n\nWhich design meets these requirements?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Deploy entirely separate CodePipeline instances in each of the three accounts, each independently pulling source and rebuilding from scratch."
+      },
+      {
+        "key": "B",
+        "text": "Run a single CodePipeline in a central tooling account; use CodeBuild to produce one build artifact stored in S3/ECR, then use cross-account IAM roles via CodePipeline's cross-account action configuration to deploy that same artifact to Test and Prod, with a manual approval action gating the Prod stage."
+      },
+      {
+        "key": "C",
+        "text": "Store a single set of long-lived IAM access keys for each of the three accounts as pipeline secrets, using them to authenticate deployment actions to each account."
+      },
+      {
+        "key": "D",
+        "text": "Use three independent CI workflows, one per account, each triggered independently on every commit."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "One pipeline building a single artifact and promoting it through cross-account IAM roles (assumed via CodePipeline's native cross-account action support, requiring no stored long-lived credentials) plus a native manual approval action before Prod satisfies all three requirements directly.",
+      "incorrect": {
+        "A": "Rebuilding independently in each account violates 'build once, promote the same artifact' and risks environment drift between what was tested and what actually gets deployed to Prod.",
+        "C": "Long-lived IAM access keys stored as pipeline secrets directly violate the requirement to avoid long-lived credentials for Prod, and carry ongoing credential-leak risk.",
+        "D": "Three independently triggered workflows can't guarantee the same artifact is promoted unchanged across accounts, and provide no single controlled approval gate before Prod."
+      }
+    }
+  },
+  {
+    "id": "kinesis-vs-sqs-fifo-multi-consumer-replay",
+    "domain": "Application Integration",
+    "scenario": "A company is building a new order-processing system where orders for a given customer must be processed in the exact order they were placed. Expected peak load is roughly 2,000 orders per second across all customers combined. Multiple independent downstream systems (billing, fulfillment, analytics) each need to process every order, and if any one of them has a bug, that team needs the ability to independently replay and reprocess the last 24 hours of order events in their original order, without affecting the other downstream systems. Which should they choose?",
+    "options": [
+      {
+        "key": "A",
+        "text": "An SQS Standard queue"
+      },
+      {
+        "key": "B",
+        "text": "An SQS FIFO queue"
+      },
+      {
+        "key": "C",
+        "text": "Amazon Kinesis Data Streams, using customer ID as the partition key, with a 24-hour retention period"
+      },
+      {
+        "key": "D",
+        "text": "An SNS topic fanning out to one SQS queue per downstream system"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "Kinesis Data Streams guarantees ordering within a partition key (customer ID), scales well beyond SQS's throughput ceiling via shards, and — critically — retains data for a configurable window so each independent consumer can replay and reprocess events from any point in that window on its own, without affecting other consumers. That replay capability is the deciding requirement here, and neither SQS option provides it.",
+      "incorrect": {
+        "A": "SQS Standard doesn't guarantee ordering at all, and once a message is deleted after processing, it's gone — there's no way to replay it later.",
+        "B": "SQS FIFO guarantees ordering per message group and exactly-once processing, but has no replay capability: once a message is successfully processed and deleted, it cannot be reprocessed, failing the 'replay the last 24 hours' requirement.",
+        "D": "Fanning out through SNS to per-system SQS queues still inherits SQS's lack of retention-based replay once messages are consumed and deleted, and a standard SNS topic doesn't guarantee ordering the way a Kinesis partition key does."
+      }
+    }
+  },
+  {
+    "id": "global-accelerator-vs-cloudfront-udp-gaming",
+    "domain": "Networking & Connectivity",
+    "scenario": "A company is launching a new real-time multiplayer game backend that communicates with clients over UDP for gameplay traffic. It needs consistent low latency by routing each player to the closest healthy regional endpoint, plus fast failover (in seconds) if a Region becomes unhealthy. The traffic is not HTTP/HTTPS and cannot be cached. Which service should front this traffic?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon CloudFront"
+      },
+      {
+        "key": "B",
+        "text": "AWS Global Accelerator"
+      },
+      {
+        "key": "C",
+        "text": "Amazon Route 53 latency-based routing alone"
+      },
+      {
+        "key": "D",
+        "text": "An Application Load Balancer with cross-zone load balancing enabled"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Global Accelerator operates at the network layer over both TCP and UDP, using static Anycast IPs to route each client to the closest healthy regional endpoint with fast, health-check-driven failover — independent of HTTP and well suited to non-cacheable, real-time gameplay traffic.",
+      "incorrect": {
+        "A": "CloudFront is an HTTP(S) content-delivery and caching service; it doesn't support arbitrary UDP traffic or non-cacheable real-time gameplay data.",
+        "C": "Route 53 latency-based routing directs DNS resolution to the closest Region, but failover depends on DNS TTL expiry and client re-resolution, which is far slower than Global Accelerator's near-instant Anycast-based failover.",
+        "D": "An ALB operates within a single Region at Layer 7 (HTTP) — it provides neither multi-Region routing nor UDP support."
+      }
+    }
+  },
+  {
+    "id": "lake-formation-fine-grained-data-lake-permissions",
+    "domain": "Analytics & Data Lake",
+    "scenario": "A company is building a new centralized data lake on S3 that will be queried by dozens of analyst teams via Athena and Redshift Spectrum. Each team should only see specific tables, and in some cases only specific columns or rows within a table (for example, finance analysts can see salary columns but no other team can), with access centrally managed and audited in one place rather than through per-team S3 bucket policies. What should a solutions architect recommend?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Create a separate S3 bucket per team, each with its own bucket policy limiting access to that team's data."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Lake Formation to centrally define and enforce table-, column-, and row-level permissions across all teams querying the shared data lake."
+      },
+      {
+        "key": "C",
+        "text": "Encrypt sensitive columns with separate per-team KMS keys, granting each team decrypt access only to their own columns' key."
+      },
+      {
+        "key": "D",
+        "text": "Rely solely on IAM policies applied directly to the underlying S3 objects, with a separate policy per team per table."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Lake Formation is purpose-built for centralized, fine-grained (table, column, and row-level) permission management across a shared data lake queried through Athena, Redshift Spectrum, and Glue, with centralized auditing — without duplicating data or infrastructure per team.",
+      "incorrect": {
+        "A": "Separate buckets per team fragment the centralized data-lake model, add data duplication and synchronization overhead, and still can't provide column- or row-level granularity within a shared table.",
+        "C": "Per-team KMS keys can approximate column-level protection but become unwieldy at scale, provide no row-level filtering, and lack the centralized query-time enforcement and auditing Lake Formation gives natively.",
+        "D": "S3-object-level IAM policies operate at object/prefix granularity, not table, column, or row granularity within a shared table — they don't achieve the fine-grained requirement described."
+      }
+    }
+  },
+  {
+    "id": "fsx-lustre-hpc-ml-training-throughput",
+    "domain": "Storage",
+    "scenario": "A company is building a new machine learning training pipeline that needs a shared, POSIX-compliant file system accessible concurrently from hundreds of EC2 GPU instances, with sub-millisecond latencies and throughput scaling into the hundreds of GB/s to keep the GPUs fed with training data, with the data sourced from and written back to S3 for durability. Which storage service should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Amazon EFS"
+      },
+      {
+        "key": "B",
+        "text": "Amazon FSx for Windows File Server"
+      },
+      {
+        "key": "C",
+        "text": "Amazon FSx for Lustre"
+      },
+      {
+        "key": "D",
+        "text": "An Amazon EBS Multi-Attach volume shared across all instances"
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "FSx for Lustre is purpose-built for HPC/ML workloads that need very high throughput (hundreds of GB/s) and sub-millisecond latencies, and it natively integrates with S3 to lazily load training data in and write results back out.",
+      "incorrect": {
+        "A": "EFS is POSIX-compliant and scales to thousands of concurrent connections, but its latency and per-client throughput profile targets general-purpose shared file workloads, not the very high-throughput performance tier FSx for Lustre specifically targets.",
+        "B": "FSx for Windows File Server serves SMB-based, Active-Directory-integrated Windows workloads — not a POSIX Linux HPC/ML use case, and not optimized for this performance tier.",
+        "D": "EBS Multi-Attach lets a small number of Nitro instances attach the same block volume, but it's a block device, not a shared file system, and isn't designed for hundreds of concurrently mounted GPU instances with S3 integration."
+      }
+    }
+  },
+  {
+    "id": "rds-multi-az-existing-single-instance-outages",
+    "domain": "Reliability",
+    "scenario": "An existing production RDS for MySQL database has caused two customer-facing outages in the past quarter — once during planned maintenance and once during an unplanned Availability Zone failure — each requiring a manual restore from the latest snapshot, taking about 45 minutes. The database currently runs as a single instance with no read replicas or Multi-AZ configured. The team wants to prevent this class of outage going forward with the least operational complexity. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Migrate the database to Amazon Aurora with a Global Database configuration spanning three Regions."
+      },
+      {
+        "key": "B",
+        "text": "Enable Multi-AZ deployment for the existing RDS for MySQL instance."
+      },
+      {
+        "key": "C",
+        "text": "Add several cross-region read replicas and update the application to fail over to a read replica manually during an outage."
+      },
+      {
+        "key": "D",
+        "text": "Take more frequent manual snapshots, every 15 minutes, to reduce recovery time when a failure occurs."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Enabling Multi-AZ directly addresses both failure modes described: a synchronous standby in another AZ automatically takes over within roughly a minute or two during both planned maintenance and unplanned AZ failure, eliminating the need for a manual restore, with minimal added operational complexity.",
+      "incorrect": {
+        "A": "Migrating to a three-Region Aurora Global Database is a valid HA option but a much larger migration effort and multi-region complexity than warranted, since the actual failure mode described (single-AZ outages) is fully addressed by simple Multi-AZ.",
+        "C": "Read replicas are asynchronous and intended for read scaling, not automatic failover — manually failing over to a replica is slower and riskier (possible data loss from replication lag) than Multi-AZ's automatic, synchronous failover.",
+        "D": "More frequent snapshots slightly reduce the potential data-loss window but do nothing to reduce the roughly 45-minute restore-and-recovery time itself, and don't address planned-maintenance downtime at all."
+      }
+    }
+  },
+  {
+    "id": "guardduty-security-hub-automated-remediation",
+    "domain": "Security & Compliance",
+    "scenario": "A company has had Amazon GuardDuty enabled across all accounts in its Organization for over a year, but security engineers can no longer keep up manually reviewing the growing volume of findings across dozens of accounts, and low-severity findings that indicate common, well-understood issues — like a publicly exposed S3 bucket — often sit unaddressed for days. The company wants a centralized view of findings across all accounts, automatic remediation for well-understood, low-risk finding types, and still wants a human to review higher-severity findings. What should they implement?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Increase the security team's headcount to keep up with manual review of GuardDuty findings in each account."
+      },
+      {
+        "key": "B",
+        "text": "Aggregate findings from GuardDuty and other security services into AWS Security Hub across the Organization, and use EventBridge rules matching specific low-severity finding types to trigger automated remediation, while routing higher-severity findings to a human review queue."
+      },
+      {
+        "key": "C",
+        "text": "Disable GuardDuty in accounts generating a large volume of low-severity findings, to reduce noise."
+      },
+      {
+        "key": "D",
+        "text": "Replace GuardDuty with AWS Config rules that check for the same misconfigurations GuardDuty already detects."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Security Hub is the AWS-native aggregation point for GuardDuty and other findings across an Organization, and pairing specific low-severity finding types with EventBridge-triggered automated remediation — while still routing serious findings to humans — is the standard pattern for scaling security operations without proportionally scaling headcount.",
+      "incorrect": {
+        "A": "Adding headcount doesn't scale with a growing multi-account environment and doesn't address the underlying need for automation.",
+        "C": "Disabling GuardDuty removes visibility into real threats entirely — the opposite of the intended outcome — and merely hides the finding-fatigue problem rather than solving it.",
+        "D": "GuardDuty uses threat intelligence and behavioral/anomaly detection across VPC Flow Logs, DNS logs, and CloudTrail that Config's rule-based configuration checks don't replicate — Config checks static configuration state, not the same detection capability, so it isn't a like-for-like replacement."
+      }
+    }
+  },
+  {
+    "id": "rds-proxy-lambda-connection-exhaustion",
+    "domain": "Database",
+    "scenario": "An existing Lambda-based serverless application experiences frequent 'too many connections' errors from its backend RDS for PostgreSQL database during traffic spikes, because each concurrent Lambda invocation opens its own new database connection and the database's max_connections limit is quickly exhausted — even though the underlying queries execute quickly and read mostly the same, rarely-changing reference data. What is the most direct fix for the connection exhaustion specifically?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add several additional read replicas and load-balance queries across them."
+      },
+      {
+        "key": "B",
+        "text": "Introduce Amazon ElastiCache in front of the database to cache query results."
+      },
+      {
+        "key": "C",
+        "text": "Introduce Amazon RDS Proxy between the Lambda functions and the database to pool and share connections."
+      },
+      {
+        "key": "D",
+        "text": "Increase the RDS instance to a larger instance class with a higher max_connections limit."
+      }
+    ],
+    "correctKey": "C",
+    "explanation": {
+      "correct": "RDS Proxy is purpose-built for exactly this Lambda-to-RDS pattern: it pools and multiplexes many short-lived, Lambda-originated connections onto a much smaller number of actual database connections, directly solving connection exhaustion without touching query performance or caching.",
+      "incorrect": {
+        "A": "More read replicas add query capacity, but each replica still has its own connection limit that Lambda's per-invocation connection pattern can still exhaust — this spreads the problem across more instances rather than solving the underlying connection-multiplexing issue.",
+        "B": "Caching with ElastiCache would help if the queries themselves were slow or repeated, but the stated problem is specifically connection exhaustion, not query latency — caching doesn't reduce the number of raw connections Lambda opens.",
+        "D": "A larger instance class raises the max_connections ceiling somewhat, but Lambda's connection-per-invocation pattern can still exhaust any fixed ceiling under a big enough spike, and this is a more expensive, less targeted fix than RDS Proxy's purpose-built connection pooling."
+      }
+    }
+  },
+  {
+    "id": "application-discovery-service-migration-hub-wave-planning",
+    "domain": "Migration Strategy",
+    "scenario": "A large enterprise is planning to migrate several hundred on-premises servers to AWS but does not have an accurate inventory of what those servers run, how they communicate with each other, or their actual CPU/memory utilization — making it difficult to plan migration waves or right-size target AWS resources. What should they do first, before selecting migration tools for individual workloads?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Immediately begin migrating servers in alphabetical order using AWS Application Migration Service (MGN), addressing dependencies as issues arise."
+      },
+      {
+        "key": "B",
+        "text": "Deploy AWS Application Discovery Service (agent-based or agentless) to collect server inventory, utilization, and network dependency data, and track migration wave planning centrally in AWS Migration Hub."
+      },
+      {
+        "key": "C",
+        "text": "Manually interview each application team to document their server inventory and dependencies in a shared spreadsheet."
+      },
+      {
+        "key": "D",
+        "text": "Provision all target EC2 instances at the largest available instance size to avoid under-provisioning, since utilization data isn't available yet."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Application Discovery Service is purpose-built for this pre-migration phase: automatically collecting server inventory, performance/utilization data, and network dependency mappings, feeding into Migration Hub for centralized wave planning — solving the 'we don't actually know what we have or how it's connected' problem before committing to migration tooling or sizing.",
+      "incorrect": {
+        "A": "Migrating without dependency data risks breaking tightly-coupled applications split across migration waves — discovery data is exactly what prevents this kind of costly mistake.",
+        "C": "Manual interviews are slow, error-prone, and don't provide accurate quantitative utilization data at the scale of several hundred servers — Discovery Service automates and scales this far beyond manual interviews.",
+        "D": "Over-provisioning to the largest instance size to hedge against missing data wastes significant cost and still doesn't address the missing dependency-mapping problem — Discovery Service provides the data needed to right-size accurately instead of guessing."
+      }
+    }
+  },
+  {
+    "id": "mgn-rehost-vmware-minimal-downtime-cutover",
+    "domain": "Migration Strategy",
+    "scenario": "A company needs to migrate several hundred on-premises VMware virtual machines to EC2 as quickly as possible with minimal application changes, wants continuous, low-impact replication of each server's disk state to AWS so the final cutover takes only minutes of downtime per server, and needs the ability to test the migrated servers in an isolated AWS environment before the real cutover. Which service should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Database Migration Service (DMS)"
+      },
+      {
+        "key": "B",
+        "text": "AWS Application Migration Service (MGN)"
+      },
+      {
+        "key": "C",
+        "text": "AWS Server Migration Service (SMS), the deprecated predecessor service"
+      },
+      {
+        "key": "D",
+        "text": "AWS DataSync"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "MGN is AWS's current, recommended rehost service: it continuously replicates on-premises (or other-cloud) servers at the block level to a staging area in AWS, allows non-disruptive test launches, and performs the final cutover in minutes — exactly the described requirement.",
+      "incorrect": {
+        "A": "DMS migrates database engines specifically (schemas and data), not entire server/VM instances including their OS and installed application stack.",
+        "C": "SMS is AWS's older, now-deprecated server migration tool; AWS explicitly recommends MGN as its replacement for this exact use case.",
+        "D": "DataSync moves files and objects between storage systems (e.g. NFS/SMB to S3/EFS) — it doesn't replicate entire server volumes for a lift-and-shift server migration."
+      }
+    }
+  },
+  {
+    "id": "strangler-fig-api-gateway-monolith-modernization",
+    "domain": "Modernization",
+    "scenario": "A company wants to incrementally modernize a large, business-critical on-premises monolithic application into microservices, without a risky 'big bang' cutover. New functionality should be built as independent microservices from day one, while gradually routing more of the existing monolith's traffic to new microservices over time, keeping both the monolith and the new services operating side by side during the transition. Which architectural pattern and AWS service combination fits this approach?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Rehost the entire monolith as-is on EC2 using AWS MGN, then decide on a modernization approach afterward."
+      },
+      {
+        "key": "B",
+        "text": "Use the Strangler Fig pattern: place Amazon API Gateway (or an ALB) in front of both the monolith and new microservices, incrementally routing specific paths or endpoints to new microservices as they're built, until the monolith is fully replaced."
+      },
+      {
+        "key": "C",
+        "text": "Rewrite the entire monolith into microservices in one release, deploying all new services simultaneously to replace the monolith at once."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Application Discovery Service to catalog the monolith's internal functions before making any architectural changes."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "This is precisely the Strangler Fig modernization pattern: a routing layer (API Gateway or ALB) sits in front of both the legacy monolith and the growing set of new microservices, incrementally directing specific request paths to new services while the monolith continues serving everything else, until it's fully replaced — avoiding a risky big-bang cutover while allowing new functionality to be greenfield microservices immediately.",
+      "incorrect": {
+        "A": "Rehosting the monolith as-is is a valid first migration step, but on its own doesn't address the requirement to incrementally build and route to new microservices during the transition — it's an orthogonal precursor step, not the modernization pattern itself.",
+        "C": "A full big-bang rewrite is exactly what the company explicitly wants to avoid, given the stated risk concerns for a business-critical application.",
+        "D": "Application Discovery Service is a pre-migration inventory and dependency-mapping tool for planning a lift-and-shift wave, not an architectural pattern for incremental application modernization."
+      }
+    }
+  },
+  {
+    "id": "datasync-vs-storage-gateway-onetime-vs-ongoing",
+    "domain": "Migration Strategy",
+    "scenario": "A company has two separate needs: (1) a one-time transfer of 500 TB of existing files from an on-premises NFS file server to Amazon S3 as part of a data center exit, after which the on-premises server will be decommissioned, and (2) for a separate, ongoing application that must remain on-premises indefinitely, low-latency local access to a working set of files while transparently and asynchronously backing all of that data up to S3 in the background. Which combination of services fits both needs respectively?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use AWS DataSync for both needs."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS DataSync for the one-time transfer (1), and AWS Storage Gateway (File Gateway) for the ongoing on-premises application (2)."
+      },
+      {
+        "key": "C",
+        "text": "Use AWS Storage Gateway for both needs."
+      },
+      {
+        "key": "D",
+        "text": "Use AWS Snowball Edge for both needs."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "DataSync is optimized for fast, one-time or scheduled bulk transfers between on-premises storage and AWS, fitting the one-time 500 TB migration before decommissioning. Storage Gateway (File Gateway) is designed for ongoing, indefinite hybrid use — presenting a local, low-latency file interface on-premises while asynchronously storing data in S3 — fitting the second, indefinite on-premises application.",
+      "incorrect": {
+        "A": "DataSync is built for point-in-time or scheduled transfer jobs, not for continuously presenting a local file interface to an ongoing on-premises application — it doesn't fit need (2).",
+        "C": "Storage Gateway's local caching model is designed for ongoing hybrid access, not for the fastest possible one-time bulk migration of 500 TB before decommissioning a server — DataSync is the more efficient, purpose-built tool for that one-time transfer.",
+        "D": "Snowball Edge is for offline, physical bulk data transfer, typically when network bandwidth is insufficient — it doesn't address the ongoing, indefinite on-premises file access requirement in (2), and nothing in (1) suggests bandwidth is the constraint that would favor it over DataSync."
+      }
+    }
+  },
+  {
+    "id": "app2container-dotnet-monolith-containerization",
+    "domain": "Modernization",
+    "scenario": "A company wants to modernize a legacy on-premises .NET monolithic application by moving it into containers to run on Amazon ECS, but the development team is fully occupied with other priorities and cannot spend time manually rewriting Dockerfiles or restructuring the application. They need a tool that can analyze the existing running application and automatically generate the container image and ECS task definition. What should they use?",
+    "options": [
+      {
+        "key": "A",
+        "text": "AWS Application Migration Service (MGN)"
+      },
+      {
+        "key": "B",
+        "text": "AWS App2Container"
+      },
+      {
+        "key": "C",
+        "text": "AWS Fargate directly, without any additional tooling"
+      },
+      {
+        "key": "D",
+        "text": "AWS Elastic Beanstalk"
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "App2Container is purpose-built to analyze an existing running Java or .NET application, automatically containerize it by generating the Dockerfile and container image, and produce the corresponding ECS/EKS deployment artifacts, including task definitions — directly matching the requirement to automatically generate these without manually rewriting anything.",
+      "incorrect": {
+        "A": "MGN performs lift-and-shift of entire servers or VMs as-is to EC2 — it doesn't containerize an application at all.",
+        "C": "Fargate is just the serverless compute engine for running containers; it doesn't analyze or containerize an existing application, so the team would still need to build the container image themselves without App2Container.",
+        "D": "Elastic Beanstalk is a PaaS that deploys applications onto managed infrastructure it provisions itself — it doesn't containerize an existing app for ECS or generate ECS task definitions."
+      }
+    }
+  },
+  {
+    "id": "mgn-rehost-vs-replatform-database-licensing-deadline",
+    "domain": "Migration Strategy",
+    "scenario": "A company is migrating dozens of applications during a large migration wave. One specific application is tightly coupled to a heavily customized, unsupported version of an on-premises SQL Server database with extensive proprietary stored procedures, and the team has a hard deadline to exit their data center in 8 weeks — not enough time to test and refactor those stored procedures for a different engine. Which migration approach should they choose for this specific application and its database?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use AWS SCT and DMS to convert the SQL Server database to Amazon Aurora PostgreSQL before the deadline."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Application Migration Service (MGN) to rehost both the application server and the SQL Server database as-is on EC2, deferring any database replatforming to after the deadline."
+      },
+      {
+        "key": "C",
+        "text": "Rewrite the application to use Amazon DynamoDB instead of a relational database."
+      },
+      {
+        "key": "D",
+        "text": "Migrate only the application server via MGN, and manually re-create the SQL Server schema and stored procedures by hand on Amazon RDS for SQL Server before the deadline."
+      }
+    ],
+    "correctKey": "B",
+    "explanation": {
+      "correct": "Given a hard 8-week deadline and heavy, unvalidated stored-procedure logic that can't safely be converted to a different engine in time, rehosting everything as-is via MGN meets the deadline with minimal risk, while database modernization can be revisited later once the time pressure is removed — meet the deadline first, modernize later.",
+      "incorrect": {
+        "A": "Converting proprietary, extensively customized stored procedures to a different engine via a heterogeneous SCT/DMS migration requires significant testing time this team doesn't have — attempting it under an 8-week deadline risks missing the deadline or shipping broken business logic.",
+        "C": "Rewriting to DynamoDB is an enormous re-architecture effort, entirely infeasible within an 8-week deadline for an application with extensive existing relational logic.",
+        "D": "Manually re-creating the schema and stored procedures on RDS for SQL Server is still a manual rebuild that introduces significant risk of subtle behavioral differences and requires far more validation effort than a straight rehost under a tight deadline — MGN's as-is replication avoids re-implementing anything by hand."
+      }
+    }
+  },
+  {
+    "id": "vmware-cloud-on-aws-preserve-tooling-deadline",
+    "domain": "Migration Strategy",
+    "scenario": "A company runs several hundred VMware-virtualized applications on-premises and must vacate its data center within 4 months. Many of these applications depend on VMware-specific features (vMotion, NSX networking policies, vSAN storage) and specialized operational tooling and staff skills built around VMware, which the company does not have time to redesign around native AWS services before the deadline — though it does want to eventually modernize each application individually once the deadline pressure is gone. What should they do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Use VMware Cloud on AWS to migrate the existing VMware environment as-is onto AWS-hosted infrastructure, preserving existing VMware tools, skills, and configurations, then modernize individual applications afterward at their own pace."
+      },
+      {
+        "key": "B",
+        "text": "Use AWS Application Migration Service (MGN) to rehost each VM individually as a native EC2 instance, reconfiguring networking and storage to native AWS equivalents for every application before the deadline."
+      },
+      {
+        "key": "C",
+        "text": "Refactor every application to use native AWS services (ECS, RDS, native VPC networking) before the deadline to avoid any dependency on VMware technology going forward."
+      },
+      {
+        "key": "D",
+        "text": "Delay the data center exit until every application can be properly replatformed to native AWS services."
+      }
+    ],
+    "correctKey": "A",
+    "explanation": {
+      "correct": "VMware Cloud on AWS runs the actual VMware stack (vSphere, NSX, vSAN) on AWS-hosted infrastructure, letting the company move as-is with its existing VMware-specific configurations, tools, and staff skills intact, meeting the hard deadline while deferring per-application modernization to native AWS services until after the pressure is off.",
+      "incorrect": {
+        "B": "MGN rehosts VMs onto native EC2, but reconfiguring every VMware-specific dependency (NSX policies, vSAN storage, vMotion-based operational processes) to native AWS equivalents for hundreds of applications is exactly the redesign work the company doesn't have time for within 4 months.",
+        "C": "Refactoring every application to native AWS services before the deadline is a much larger effort than rehosting and directly contradicts the stated time constraint — it's the eventual goal, not something achievable in 4 months.",
+        "D": "Delaying the data center exit isn't viable given a fixed exit deadline (often driven by an expiring lease or contract) — the company needs a migration approach that fits the existing timeline, which VMware Cloud on AWS provides."
+      }
+    }
   }
 ]
