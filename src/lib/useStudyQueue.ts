@@ -21,10 +21,10 @@ interface LoadedState {
   queue: number[];
 }
 
-// localStorage doesn't exist during SSR, so this can only run client-side,
-// as a query — not read directly during initial render.
-function loadStudyQueue(cards: Card[]): LoadedState {
-  const progress = loadProgress();
+// SQLite (via sql.js/IndexedDB) doesn't exist during SSR, so this can only
+// run client-side, as a query — not read directly during initial render.
+async function loadStudyQueue(cards: Card[]): Promise<LoadedState> {
+  const progress = await loadProgress();
   const dueIndices = cards
     .map((_, i) => i)
     .filter((i) => isDue(progress[cards[i].front]));
@@ -49,7 +49,7 @@ export function useStudyQueue(categorySlug: string, cards: Card[]) {
 
   const rateMutation = useMutation({
     mutationFn: async (updatedProgress: Record<string, CardProgress>) => {
-      saveProgress(updatedProgress);
+      await saveProgress(updatedProgress);
       return updatedProgress;
     },
     onSuccess: (updatedProgress) => {

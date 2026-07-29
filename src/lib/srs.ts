@@ -1,3 +1,5 @@
+import { loadProgressFromSqlite, saveProgressToSqlite } from "@/lib/sqlite";
+
 export type Rating = "again" | "hard" | "good" | "easy";
 
 export interface CardProgress {
@@ -9,23 +11,17 @@ export interface CardProgress {
 
 type ProgressMap = Record<string, CardProgress>;
 
-const STORAGE_KEY = "sap-c02-srs-state";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_EASE = 2.5;
 const MIN_EASE = 1.3;
 
-export function loadProgress(): ProgressMap {
+export async function loadProgress(): Promise<ProgressMap> {
   if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ProgressMap) : {};
-  } catch {
-    return {};
-  }
+  return loadProgressFromSqlite();
 }
 
-export function saveProgress(progress: ProgressMap): void {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+export async function saveProgress(progress: ProgressMap): Promise<void> {
+  await saveProgressToSqlite(progress);
 }
 
 export function isDue(progress: CardProgress | undefined, now = Date.now()): boolean {
