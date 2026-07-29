@@ -22,17 +22,26 @@ export interface McqQuestion {
 
 const questions = mcqData as unknown as McqQuestion[];
 
+function initialQueue() {
+  return questions.map((_, i) => i);
+}
+
 export function useMcqQueue() {
-  const [index, setIndex] = useState(0);
+  const [queue, setQueue] = useState<number[]>(initialQueue);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
 
   const total = questions.length;
-  const question = questions[index] ?? null;
+  const question = queue.length > 0 ? questions[queue[0]] : null;
   const isAnswered = selectedKey !== null;
   const isCorrect = isAnswered && selectedKey === question?.correctKey;
-  const isComplete = index >= total;
-  const isLastQuestion = index === total - 1;
+  const isComplete = queue.length === 0;
+  const isLastQuestion = queue.length === 1;
+  const canSkip = queue.length > 1;
+  const isRevisit = question !== null && skippedIds.has(question.id);
+  const skippedCount = skippedIds.size;
 
   function selectAnswer(key: string) {
     if (isAnswered || !question) return;
@@ -41,19 +50,40 @@ export function useMcqQueue() {
   }
 
   function next() {
+    if (queue.length === 0) return;
+    const [currentIndex, ...rest] = queue;
+    const currentId = questions[currentIndex].id;
+    setQueue(rest);
+    setAnsweredCount((c) => c + 1);
     setSelectedKey(null);
-    setIndex((i) => i + 1);
+    if (skippedIds.has(currentId)) {
+      setSkippedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(currentId);
+        return next;
+      });
+    }
+  }
+
+  function skip() {
+    if (isAnswered || queue.length <= 1) return;
+    const [currentIndex, ...rest] = queue;
+    const currentId = questions[currentIndex].id;
+    setQueue([...rest, currentIndex]);
+    setSkippedIds((prev) => new Set(prev).add(currentId));
   }
 
   function restart() {
-    setIndex(0);
+    setQueue(initialQueue());
     setSelectedKey(null);
     setScore(0);
+    setAnsweredCount(0);
+    setSkippedIds(new Set());
   }
 
   return {
     question,
-    questionNumber: index + 1,
+    questionNumber: answeredCount + 1,
     total,
     score,
     selectedKey,
@@ -61,8 +91,12 @@ export function useMcqQueue() {
     isCorrect,
     isComplete,
     isLastQuestion,
+    canSkip,
+    isRevisit,
+    skippedCount,
     selectAnswer,
     next,
+    skip,
     restart,
   };
 }

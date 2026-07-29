@@ -21,8 +21,12 @@ export default function McqPage() {
     isAnswered,
     isComplete,
     isLastQuestion,
+    canSkip,
+    isRevisit,
+    skippedCount,
     selectAnswer,
     next,
+    skip,
     restart,
   } = useMcqQueue();
 
@@ -36,6 +40,11 @@ export default function McqPage() {
         if (index !== -1 && question.options[index]) {
           event.preventDefault();
           selectAnswer(question.options[index].key);
+          return;
+        }
+        if (event.key.toLowerCase() === "s" && canSkip) {
+          event.preventDefault();
+          skip();
         }
         return;
       }
@@ -48,7 +57,7 @@ export default function McqPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [question, isAnswered, selectAnswer, next]);
+  }, [question, isAnswered, canSkip, selectAnswer, next, skip]);
 
   return (
     <div className="flex flex-1 flex-col items-center bg-muted/30 px-4 py-10 font-sans">
@@ -61,6 +70,7 @@ export default function McqPage() {
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
                   Question {questionNumber} of {total}
+                  {skippedCount > 0 && ` · ${skippedCount} skipped`}
                 </span>
                 <span>{score} correct</span>
               </div>
@@ -71,7 +81,10 @@ export default function McqPage() {
               question={question}
               selectedKey={selectedKey}
               isAnswered={isAnswered}
+              isRevisit={isRevisit}
+              canSkip={canSkip}
               onSelect={selectAnswer}
+              onSkip={skip}
             />
 
             {isAnswered && (

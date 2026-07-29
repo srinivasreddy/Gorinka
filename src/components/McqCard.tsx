@@ -11,17 +11,29 @@ interface McqCardProps {
   question: McqQuestion;
   selectedKey: string | null;
   isAnswered: boolean;
+  isRevisit: boolean;
+  canSkip: boolean;
   onSelect: (key: string) => void;
+  onSkip: () => void;
 }
 
-export function McqCard({ question, selectedKey, isAnswered, onSelect }: McqCardProps) {
+export function McqCard({
+  question,
+  selectedKey,
+  isAnswered,
+  isRevisit,
+  canSkip,
+  onSelect,
+  onSkip,
+}: McqCardProps) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-6">
         <div>
-          <Badge variant="secondary" className="mb-3">
-            {question.domain}
-          </Badge>
+          <div className="mb-3 flex items-center gap-2">
+            <Badge variant="secondary">{question.domain}</Badge>
+            {isRevisit && <Badge variant="outline">Skipped earlier</Badge>}
+          </div>
           <p className="whitespace-pre-line text-base leading-relaxed text-foreground">
             {question.scenario}
           </p>
@@ -37,6 +49,7 @@ export function McqCard({ question, selectedKey, isAnswered, onSelect }: McqCard
             return (
               <Button
                 key={option.key}
+                data-testid="mcq-option"
                 onClick={() => onSelect(option.key)}
                 disabled={isAnswered}
                 variant="outline"
@@ -71,6 +84,18 @@ export function McqCard({ question, selectedKey, isAnswered, onSelect }: McqCard
             );
           })}
         </div>
+
+        {!isAnswered && canSkip && (
+          <Button
+            onClick={onSkip}
+            variant="ghost"
+            size="sm"
+            className="self-end text-muted-foreground"
+          >
+            Skip this question — answer it later{" "}
+            <span className="opacity-60 font-normal">(S)</span>
+          </Button>
+        )}
 
         {isAnswered && (
           <div className="flex flex-col gap-4 border-t pt-4">
