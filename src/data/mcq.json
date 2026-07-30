@@ -1360,7 +1360,7 @@
         ]
       }
     },
-    "category": "database"
+    "category": "dynamodb"
   },
   {
     "id": "api-gateway-usage-plans-per-customer-throttling",
@@ -4605,7 +4605,12 @@
             "term": "Amazon DynamoDB",
             "front": "Amazon DynamoDB"
           },
-          " with on-demand capacity mode."
+          " with ",
+          {
+            "term": "on-demand capacity mode",
+            "front": "DynamoDB: Capacity Modes — On-Demand vs. Provisioned"
+          },
+          "."
         ]
       }
     ],
@@ -4987,7 +4992,12 @@
       {
         "key": "B",
         "text": [
-          "Use a single-table design, storing related entity types together in one table using composite partition and sort keys structured around the known access patterns, so related items can be retrieved in a single query."
+          "Use a ",
+          {
+            "term": "single-table design",
+            "front": "DynamoDB Single-Table Design"
+          },
+          ", storing related entity types together in one table using composite partition and sort keys structured around the known access patterns, so related items can be retrieved in a single query."
         ]
       },
       {
@@ -5030,7 +5040,7 @@
         ]
       }
     },
-    "category": "database"
+    "category": "dynamodb"
   },
   {
     "id": "cognito-user-pools-federated-social-saml",
@@ -5590,7 +5600,12 @@
       {
         "key": "B",
         "text": [
-          "Switch the table to DynamoDB on-demand capacity mode, which automatically scales to accommodate traffic without pre-provisioned throughput."
+          "Switch the table to ",
+          {
+            "term": "DynamoDB on-demand capacity mode",
+            "front": "DynamoDB: Capacity Modes — On-Demand vs. Provisioned"
+          },
+          ", which automatically scales to accommodate traffic without pre-provisioned throughput."
         ]
       },
       {
@@ -5633,7 +5648,7 @@
         ]
       }
     },
-    "category": "database"
+    "category": "dynamodb"
   },
   {
     "id": "lambda-snapstart-vs-provisioned-concurrency-cold-start",
@@ -6234,7 +6249,7 @@
         ]
       }
     },
-    "category": "database"
+    "category": "dynamodb"
   },
   {
     "id": "trusted-advisor-lambda-automated-cleanup",

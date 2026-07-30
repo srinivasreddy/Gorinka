@@ -3,6 +3,7 @@ import computeCards from "@/data/cards/compute.json";
 import costManagementCards from "@/data/cards/cost-management.json";
 import databaseCards from "@/data/cards/database.json";
 import developerToolsCards from "@/data/cards/developer-tools.json";
+import dynamodbCards from "@/data/cards/dynamodb.json";
 import endUserComputingCards from "@/data/cards/end-user-computing.json";
 import httpErrorCodesCards from "@/data/cards/http-error-codes.json";
 import integrationCards from "@/data/cards/integration.json";
@@ -33,6 +34,7 @@ export const CATEGORIES: CardCategory[] = [
   { slug: "compute", title: "Compute", cards: clean(computeCards) },
   { slug: "storage", title: "Storage", cards: clean(storageCards) },
   { slug: "database", title: "Database", cards: clean(databaseCards) },
+  { slug: "dynamodb", title: "Amazon DynamoDB", cards: clean(dynamodbCards) },
   { slug: "networking", title: "Networking & Content Delivery", cards: clean(networkingCards) },
   { slug: "security", title: "Security, Identity & Compliance", cards: clean(securityCards) },
   { slug: "analytics", title: "Analytics", cards: clean(analyticsCards) },
