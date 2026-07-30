@@ -3,20 +3,17 @@
 import { Fragment } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveRichText, type McqRichText } from "@/lib/mcqRichText";
 import { cn } from "@/lib/utils";
-import type { McqQuestion } from "@/lib/useMcqQueue";
+import type { McqQuestion } from "@/lib/mcqQuestions";
 
 interface McqCardProps {
   question: McqQuestion;
   selectedKey: string | null;
   isAnswered: boolean;
-  isRevisit: boolean;
-  canSkip: boolean;
   onSelect: (key: string) => void;
-  onSkip: () => void;
 }
 
 function RichText({ segments }: { segments: McqRichText }) {
@@ -49,15 +46,7 @@ function isFromLink(event: { target: EventTarget | null }): boolean {
   return (event.target as HTMLElement).closest("a") !== null;
 }
 
-export function McqCard({
-  question,
-  selectedKey,
-  isAnswered,
-  isRevisit,
-  canSkip,
-  onSelect,
-  onSkip,
-}: McqCardProps) {
+export function McqCard({ question, selectedKey, isAnswered, onSelect }: McqCardProps) {
   function handleOptionClick(event: React.MouseEvent, key: string) {
     if (isFromLink(event) || isAnswered) return;
     onSelect(key);
@@ -77,7 +66,6 @@ export function McqCard({
         <div>
           <div className="mb-3 flex items-center gap-2">
             <Badge variant="secondary">{question.domain}</Badge>
-            {isRevisit && <Badge variant="outline">Skipped earlier</Badge>}
           </div>
           <p className="whitespace-pre-line text-base leading-relaxed text-foreground">
             <RichText segments={question.scenario} />
@@ -138,18 +126,6 @@ export function McqCard({
             );
           })}
         </div>
-
-        {!isAnswered && canSkip && (
-          <Button
-            onClick={onSkip}
-            variant="ghost"
-            size="sm"
-            className="self-end text-muted-foreground"
-          >
-            Skip this question — answer it later{" "}
-            <span className="opacity-60 font-normal">(S)</span>
-          </Button>
-        )}
 
         {isAnswered && (
           <div className="flex flex-col gap-4 border-t pt-4">
