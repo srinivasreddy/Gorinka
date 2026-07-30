@@ -4,6 +4,7 @@ import costManagementCards from "@/data/cards/cost-management.json";
 import databaseCards from "@/data/cards/database.json";
 import developerToolsCards from "@/data/cards/developer-tools.json";
 import endUserComputingCards from "@/data/cards/end-user-computing.json";
+import httpErrorCodesCards from "@/data/cards/http-error-codes.json";
 import integrationCards from "@/data/cards/integration.json";
 import iotCards from "@/data/cards/iot.json";
 import machineLearningCards from "@/data/cards/machine-learning.json";
@@ -47,6 +48,7 @@ export const CATEGORIES: CardCategory[] = [
     cards: clean(endUserComputingCards),
   },
   { slug: "cost-management", title: "Cost Management", cards: clean(costManagementCards) },
+  { slug: "http-error-codes", title: "HTTP Error Codes", cards: clean(httpErrorCodesCards) },
 ];
 
 const CATEGORY_BY_SLUG = new Map(CATEGORIES.map((c) => [c.slug, c]));
