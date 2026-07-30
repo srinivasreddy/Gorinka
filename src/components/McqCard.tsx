@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { renderCardLinks } from "@/lib/cards";
+import { findCardLocation } from "@/lib/cards";
 import { cn } from "@/lib/utils";
 import type { McqQuestion } from "@/lib/useMcqQueue";
 
@@ -16,6 +16,45 @@ interface McqCardProps {
   canSkip: boolean;
   onSelect: (key: string) => void;
   onSkip: () => void;
+}
+
+// MCQ content contains only plain text plus these repository-controlled card
+// markers. Parse that small format into React nodes instead of treating the
+// entire field as trusted HTML.
+function renderCardText(text: string, interactive: boolean): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  const pattern = /<a href="#" data-card-link="([^"]+)">([^<]*)<\/a>/g;
+  let cursor = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index;
+    if (index > cursor) nodes.push(text.slice(cursor, index));
+
+    const [markup, front, label] = match;
+    const location = findCardLocation(front);
+    if (interactive && location) {
+      nodes.push(
+        <a
+          key={`${index}-${front}`}
+          href={`/flashcards/${location.categorySlug}?card=${encodeURIComponent(front)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {label}
+        </a>
+      );
+    } else {
+      nodes.push(
+        <span key={`${index}-${front}`} data-card-term>
+          {label}
+        </span>
+      );
+    }
+    cursor = index + markup.length;
+  }
+
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return nodes;
 }
 
 export function McqCard({
@@ -35,10 +74,9 @@ export function McqCard({
             <Badge variant="secondary">{question.domain}</Badge>
             {isRevisit && <Badge variant="outline">Skipped earlier</Badge>}
           </div>
-          <p
-            className="whitespace-pre-line text-base leading-relaxed text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary"
-            dangerouslySetInnerHTML={{ __html: renderCardLinks(question.scenario, true) }}
-          />
+          <p className="whitespace-pre-line text-base leading-relaxed text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary">
+            {renderCardText(question.scenario, true)}
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -81,10 +119,7 @@ export function McqCard({
                     option.key
                   )}
                 </span>
-                <span
-                  className="flex-1"
-                  dangerouslySetInnerHTML={{ __html: renderCardLinks(option.text, false) }}
-                />
+                <span className="flex-1">{renderCardText(option.text, false)}</span>
               </Button>
             );
           })}
@@ -130,12 +165,9 @@ export function McqCard({
               <p className="mb-1 text-sm font-semibold text-foreground">
                 Why {question.correctKey} is correct
               </p>
-              <p
-                className="text-sm leading-relaxed text-muted-foreground"
-                dangerouslySetInnerHTML={{
-                  __html: renderCardLinks(question.explanation.correct, true),
-                }}
-              />
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {renderCardText(question.explanation.correct, true)}
+              </p>
             </div>
 
             <div>
@@ -144,9 +176,7 @@ export function McqCard({
                 {Object.entries(question.explanation.incorrect).map(([key, reason]) => (
                   <li key={key} className="text-sm leading-relaxed text-muted-foreground">
                     <span className="font-medium text-foreground">{key}: </span>
-                    <span
-                      dangerouslySetInnerHTML={{ __html: renderCardLinks(reason, true) }}
-                    />
+                    <span>{renderCardText(reason, true)}</span>
                   </li>
                 ))}
               </ul>
