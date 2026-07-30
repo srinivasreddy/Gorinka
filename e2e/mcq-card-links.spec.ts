@@ -16,9 +16,7 @@ test("clicking a term in an MCQ question opens the linked flashcard in a new tab
   await page.goto("/mcq");
 
   // vpc-privatelink-shared-services is the first question; its scenario text
-  // links "VPC peering" to the "VPC Peering" flashcard. Card terms inside
-  // answer options are deliberately non-interactive so the option remains a
-  // single native button.
+  // links "VPC peering" to the "VPC Peering" flashcard.
   const link = page.getByRole("link", { name: "VPC peering" }).first();
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute(
@@ -48,16 +46,4 @@ test("clicking a term in an MCQ question opens the linked flashcard in a new tab
   );
 
   expect(consoleErrors, `Console errors: ${consoleErrors.join("\n")}`).toEqual([]);
-});
-
-test("answer options remain native buttons without nested links", async ({ page }) => {
-  await page.goto("/mcq");
-
-  const firstOption = page.getByTestId("mcq-option").first();
-  await expect(firstOption).toHaveRole("button");
-  await expect(firstOption.getByRole("link")).toHaveCount(0);
-
-  await firstOption.focus();
-  await page.keyboard.press("Enter");
-  await expect(firstOption).toBeDisabled();
 });

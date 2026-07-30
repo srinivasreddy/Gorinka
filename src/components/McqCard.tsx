@@ -3,44 +3,28 @@
 import { Fragment } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { resolveRichText, type McqRichText } from "@/lib/mcqRichText";
 import { cn } from "@/lib/utils";
-import type { McqQuestion } from "@/lib/useMcqQueue";
+import type { McqQuestion } from "@/lib/mcqQuestions";
 
 interface McqCardProps {
   question: McqQuestion;
   selectedKey: string | null;
   isAnswered: boolean;
-  isRevisit: boolean;
-  canSkip: boolean;
   onSelect: (key: string) => void;
-  onSkip: () => void;
 }
 
-interface RichTextProps {
-  segments: McqRichText;
-  // Options can be nothing but a single linked term, and a native <button>
-  // can't contain a nested <a> anyway -- so terms there render as inert,
-  // underlined text rather than links. Scenario and explanation text aren't
-  // inside any clickable control, so their terms link out for real.
-  linkable: boolean;
-}
-
-function RichText({ segments, linkable }: RichTextProps) {
+function RichText({ segments }: { segments: McqRichText }) {
   return (
     <>
-      {resolveRichText(segments, linkable).map((piece, index) => {
+      {resolveRichText(segments).map((piece, index) => {
         switch (piece.type) {
           case "text":
             return <Fragment key={index}>{piece.value}</Fragment>;
           case "term":
-            return (
-              <span key={index} data-card-term>
-                {piece.text}
-              </span>
-            );
+            return <Fragment key={index}>{piece.text}</Fragment>;
           case "link":
             return (
               <a key={index} href={piece.href} target="_blank" rel="noopener noreferrer">
@@ -53,30 +37,38 @@ function RichText({ segments, linkable }: RichTextProps) {
   );
 }
 
-const LINK_STYLES =
-  "[&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary";
-const TERM_STYLES =
-  "[&_[data-card-term]]:underline [&_[data-card-term]]:underline-offset-2 [&_[data-card-term]]:decoration-dotted";
+// True whenever the click/keydown originated on (or inside) a linked term --
+// lets those terms' native <a> behavior run untouched, while any other click
+// in the row still selects the option. Standard nested-interactive-element
+// handling: the anchor isn't intercepted or re-implemented, its parent
+// container just declines to also treat the click as "select this option."
+function isFromLink(event: { target: EventTarget | null }): boolean {
+  return (event.target as HTMLElement).closest("a") !== null;
+}
 
-export function McqCard({
-  question,
-  selectedKey,
-  isAnswered,
-  isRevisit,
-  canSkip,
-  onSelect,
-  onSkip,
-}: McqCardProps) {
+export function McqCard({ question, selectedKey, isAnswered, onSelect }: McqCardProps) {
+  function handleOptionClick(event: React.MouseEvent, key: string) {
+    if (isFromLink(event) || isAnswered) return;
+    onSelect(key);
+  }
+
+  function handleOptionKeyDown(event: React.KeyboardEvent, key: string) {
+    if (isFromLink(event)) return; // let the focused link's own Enter activation run
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    if (isAnswered) return;
+    onSelect(key);
+  }
+
   return (
     <Card>
-      <CardContent className="flex flex-col gap-6">
+      <CardContent className="flex flex-col gap-6 [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <Badge variant="secondary">{question.domain}</Badge>
-            {isRevisit && <Badge variant="outline">Skipped earlier</Badge>}
           </div>
-          <p className={cn("whitespace-pre-line text-base leading-relaxed text-foreground", LINK_STYLES)}>
-            <RichText segments={question.scenario} linkable />
+          <p className="whitespace-pre-line text-base leading-relaxed text-foreground">
+            <RichText segments={question.scenario} />
           </p>
         </div>
 
@@ -88,16 +80,22 @@ export function McqCard({
             const showAsIncorrect = isAnswered && isSelectedOption && !isCorrectOption;
 
             return (
-              <Button
+              // A div, not a <button>: option text can contain a real <a>
+              // link to a flashcard, and a native <button> can never legally
+              // contain interactive content. isFromLink() lets the link
+              // navigate normally while keeping the rest of the row
+              // selectable, same as any "card with an embedded link" UI.
+              <div
                 key={option.key}
                 data-testid="mcq-option"
-                onClick={() => onSelect(option.key)}
-                disabled={isAnswered}
-                variant="outline"
-                size="lg"
+                role="button"
+                tabIndex={isAnswered ? -1 : 0}
+                aria-disabled={isAnswered}
+                onClick={(event) => handleOptionClick(event, option.key)}
+                onKeyDown={(event) => handleOptionKeyDown(event, option.key)}
                 className={cn(
-                  "h-auto w-full justify-start gap-3 whitespace-normal px-4 py-3 text-left text-sm font-normal disabled:opacity-100",
-                  TERM_STYLES,
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-auto w-full cursor-pointer justify-start gap-3 whitespace-normal px-4 py-3 text-left text-sm font-normal",
                   showAsCorrect &&
                     "border-green-300 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200",
                   showAsIncorrect &&
@@ -122,27 +120,15 @@ export function McqCard({
                   )}
                 </span>
                 <span className="flex-1">
-                  <RichText segments={option.text} linkable={false} />
+                  <RichText segments={option.text} />
                 </span>
-              </Button>
+              </div>
             );
           })}
         </div>
 
-        {!isAnswered && canSkip && (
-          <Button
-            onClick={onSkip}
-            variant="ghost"
-            size="sm"
-            className="self-end text-muted-foreground"
-          >
-            Skip this question — answer it later{" "}
-            <span className="opacity-60 font-normal">(S)</span>
-          </Button>
-        )}
-
         {isAnswered && (
-          <div className={cn("flex flex-col gap-4 border-t pt-4", LINK_STYLES)}>
+          <div className="flex flex-col gap-4 border-t pt-4">
             <div
               className={cn(
                 "flex items-start gap-2 rounded-lg p-3 text-sm",
@@ -168,7 +154,7 @@ export function McqCard({
                 Why {question.correctKey} is correct
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                <RichText segments={question.explanation.correct} linkable />
+                <RichText segments={question.explanation.correct} />
               </p>
             </div>
 
@@ -178,7 +164,7 @@ export function McqCard({
                 {Object.entries(question.explanation.incorrect).map(([key, reason]) => (
                   <li key={key} className="text-sm leading-relaxed text-muted-foreground">
                     <span className="font-medium text-foreground">{key}: </span>
-                    <RichText segments={reason} linkable />
+                    <RichText segments={reason} />
                   </li>
                 ))}
               </ul>
