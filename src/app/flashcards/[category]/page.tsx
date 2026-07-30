@@ -13,7 +13,7 @@ import { useStudyQueue } from "@/lib/useStudyQueue";
 import { useKeyboardShortcuts } from "@/lib/useKeyboardShortcuts";
 import { useSwipeGesture } from "@/lib/useSwipeGesture";
 import { useCardSearch } from "@/lib/useCardSearch";
-import { getCategory, findCardByFront } from "@/lib/cards";
+import { getCategory, findCardByFront, findCardLocation } from "@/lib/cards";
 import type { Rating } from "@/lib/srs";
 import type { Card as CardData } from "@/lib/cards";
 
@@ -67,6 +67,9 @@ export default function CategoryFlashcardsPage() {
   }
 
   function popLookup() {
+    if (lookupStack.length === 1 && cardParam) {
+      router.replace(`/flashcards/${slug}`);
+    }
     setLookupStack((stack) => stack.slice(0, -1));
     setLookupRevealed(true);
   }
@@ -74,18 +77,27 @@ export default function CategoryFlashcardsPage() {
   // Lets a link from outside the flashcards section (e.g. an MCQ question)
   // deep-link straight to one card via /flashcards/[category]?card=<front>,
   // reusing the same lookup stack as an in-card "see also" link or search
-  // result. The param is stripped right after so it doesn't re-trigger on
-  // back/forward navigation within this page.
+  // result. Keep the parameter while the linked card is displayed so refresh,
+  // bookmarking, and copying the URL preserve the same state.
   const cardParam = searchParams.get("card");
   useEffect(() => {
     if (!cardParam) return;
-    const target = findCardByFront(cardParam);
+    const location = findCardLocation(cardParam);
+    if (!location) {
+      router.replace(`/flashcards/${slug}`);
+      return;
+    }
+    if (location.categorySlug !== slug) {
+      router.replace(
+        `/flashcards/${location.categorySlug}?card=${encodeURIComponent(cardParam)}`
+      );
+      return;
+    }
     // Deep-linking into a specific card via URL is exactly the kind of
     // external-system sync effects are for -- there's no user event to hang
     // this off, since it must fire on initial load too.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (target) startLookup(target);
-    router.replace(`/flashcards/${slug}`);
+    startLookup(location.card);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardParam]);
 

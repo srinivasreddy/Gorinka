@@ -78,6 +78,23 @@ export function findCardLocation(front: string): { categorySlug: string; card: C
   return { categorySlug, card };
 }
 
+const CARD_LINK_PATTERN = /<a href="#" data-card-link="([^"]+)">([\s\S]*?)<\/a>/g;
+
+// MCQ data stores card references independently of their destination route.
+// Turn them into genuine links where navigation is appropriate, or plain
+// marked-up terms inside answer buttons where nested interactivity is not.
+export function renderCardLinks(html: string, interactive: boolean): string {
+  return html.replace(CARD_LINK_PATTERN, (_match, front: string, label: string) => {
+    if (!interactive) return `<span data-card-term>${label}</span>`;
+
+    const location = findCardLocation(front);
+    if (!location) return label;
+
+    const href = `/flashcards/${location.categorySlug}?card=${encodeURIComponent(front)}`;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }
