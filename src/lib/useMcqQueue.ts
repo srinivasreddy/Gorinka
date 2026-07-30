@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import mcqData from "@/data/mcq.json";
+import type { McqRichText } from "@/lib/mcqRichText";
 
 export interface McqOption {
   key: string;
-  text: string;
+  text: McqRichText;
 }
 
 export interface McqQuestion {
   id: string;
   domain: string;
-  scenario: string;
+  scenario: McqRichText;
   options: McqOption[];
   correctKey: string;
   explanation: {
-    correct: string;
-    incorrect: Record<string, string>;
+    correct: McqRichText;
+    incorrect: Record<string, McqRichText>;
   };
 }
 
