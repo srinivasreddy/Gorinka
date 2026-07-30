@@ -1,10 +1,11 @@
 "use client";
 
+import { Fragment } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { findCardLocation } from "@/lib/cards";
+import { resolveRichText, type McqRichText } from "@/lib/mcqRichText";
 import { cn } from "@/lib/utils";
 import type { McqQuestion } from "@/lib/useMcqQueue";
 
@@ -18,44 +19,44 @@ interface McqCardProps {
   onSkip: () => void;
 }
 
-// MCQ content contains only plain text plus these repository-controlled card
-// markers. Parse that small format into React nodes instead of treating the
-// entire field as trusted HTML.
-function renderCardText(text: string, interactive: boolean): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  const pattern = /<a href="#" data-card-link="([^"]+)">([^<]*)<\/a>/g;
-  let cursor = 0;
-
-  for (const match of text.matchAll(pattern)) {
-    const index = match.index;
-    if (index > cursor) nodes.push(text.slice(cursor, index));
-
-    const [markup, front, label] = match;
-    const location = findCardLocation(front);
-    if (interactive && location) {
-      nodes.push(
-        <a
-          key={`${index}-${front}`}
-          href={`/flashcards/${location.categorySlug}?card=${encodeURIComponent(front)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {label}
-        </a>
-      );
-    } else {
-      nodes.push(
-        <span key={`${index}-${front}`} data-card-term>
-          {label}
-        </span>
-      );
-    }
-    cursor = index + markup.length;
-  }
-
-  if (cursor < text.length) nodes.push(text.slice(cursor));
-  return nodes;
+interface RichTextProps {
+  segments: McqRichText;
+  // Options can be nothing but a single linked term, and a native <button>
+  // can't contain a nested <a> anyway -- so terms there render as inert,
+  // underlined text rather than links. Scenario and explanation text aren't
+  // inside any clickable control, so their terms link out for real.
+  linkable: boolean;
 }
+
+function RichText({ segments, linkable }: RichTextProps) {
+  return (
+    <>
+      {resolveRichText(segments, linkable).map((piece, index) => {
+        switch (piece.type) {
+          case "text":
+            return <Fragment key={index}>{piece.value}</Fragment>;
+          case "term":
+            return (
+              <span key={index} data-card-term>
+                {piece.text}
+              </span>
+            );
+          case "link":
+            return (
+              <a key={index} href={piece.href} target="_blank" rel="noopener noreferrer">
+                {piece.text}
+              </a>
+            );
+        }
+      })}
+    </>
+  );
+}
+
+const LINK_STYLES =
+  "[&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary";
+const TERM_STYLES =
+  "[&_[data-card-term]]:underline [&_[data-card-term]]:underline-offset-2 [&_[data-card-term]]:decoration-dotted";
 
 export function McqCard({
   question,
@@ -74,8 +75,8 @@ export function McqCard({
             <Badge variant="secondary">{question.domain}</Badge>
             {isRevisit && <Badge variant="outline">Skipped earlier</Badge>}
           </div>
-          <p className="whitespace-pre-line text-base leading-relaxed text-foreground [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary">
-            {renderCardText(question.scenario, true)}
+          <p className={cn("whitespace-pre-line text-base leading-relaxed text-foreground", LINK_STYLES)}>
+            <RichText segments={question.scenario} linkable />
           </p>
         </div>
 
@@ -95,7 +96,8 @@ export function McqCard({
                 variant="outline"
                 size="lg"
                 className={cn(
-                  "h-auto w-full justify-start gap-3 whitespace-normal px-4 py-3 text-left text-sm font-normal disabled:opacity-100 [&_[data-card-term]]:underline [&_[data-card-term]]:underline-offset-2 [&_[data-card-term]]:decoration-dotted",
+                  "h-auto w-full justify-start gap-3 whitespace-normal px-4 py-3 text-left text-sm font-normal disabled:opacity-100",
+                  TERM_STYLES,
                   showAsCorrect &&
                     "border-green-300 bg-green-50 text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-200",
                   showAsIncorrect &&
@@ -119,7 +121,9 @@ export function McqCard({
                     option.key
                   )}
                 </span>
-                <span className="flex-1">{renderCardText(option.text, false)}</span>
+                <span className="flex-1">
+                  <RichText segments={option.text} linkable={false} />
+                </span>
               </Button>
             );
           })}
@@ -138,9 +142,7 @@ export function McqCard({
         )}
 
         {isAnswered && (
-          <div
-            className="flex flex-col gap-4 border-t pt-4 [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-dotted hover:[&_a]:text-primary"
-          >
+          <div className={cn("flex flex-col gap-4 border-t pt-4", LINK_STYLES)}>
             <div
               className={cn(
                 "flex items-start gap-2 rounded-lg p-3 text-sm",
@@ -166,7 +168,7 @@ export function McqCard({
                 Why {question.correctKey} is correct
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                {renderCardText(question.explanation.correct, true)}
+                <RichText segments={question.explanation.correct} linkable />
               </p>
             </div>
 
@@ -176,7 +178,7 @@ export function McqCard({
                 {Object.entries(question.explanation.incorrect).map(([key, reason]) => (
                   <li key={key} className="text-sm leading-relaxed text-muted-foreground">
                     <span className="font-medium text-foreground">{key}: </span>
-                    <span>{renderCardText(reason, true)}</span>
+                    <RichText segments={reason} linkable />
                   </li>
                 ))}
               </ul>
