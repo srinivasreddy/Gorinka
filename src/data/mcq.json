@@ -87,7 +87,8 @@
           "Site-to-Site VPN is designed for connecting to on-premises networks, not VPC-to-VPC connectivity within AWS. It adds unnecessary encryption/tunnel overhead and per-connection management, with no advantage over PrivateLink or Transit Gateway for intra-AWS traffic."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "vpc-subnet-sharing-ram",
@@ -167,7 +168,8 @@
           "IAM resource-based policies aren't how cross-account subnet access is granted in AWS — VPC sharing via RAM is the actual mechanism. Relying on IAM policies alone to prevent infrastructure changes is weaker and not how AWS implements this boundary."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "tgw-multi-region-segmentation",
@@ -257,7 +259,8 @@
           "A full mesh of VPC peering connections across 18 VPCs doesn't scale (no transitive routing, and a rapidly growing number of pairwise connections to manage), and NACLs are a much higher-maintenance, per-subnet mechanism compared to centralized route-table-based segmentation at the Transit Gateway."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "dx-resiliency-toolkit-vpn-backup",
@@ -357,7 +360,8 @@
           "A Direct Connect Gateway is a routing construct for connecting Direct Connect connections to VPCs across regions/accounts — it does not itself provide a backup connectivity path. Omitting the VPN backup leaves no failover option if both Direct Connect connections fail at once (e.g., a regional Direct Connect service disruption), violating the automatic-internet-failover requirement."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "vpn-ecmp-throughput-scaling",
@@ -452,7 +456,8 @@
           "Accelerated Site-to-Site VPN uses AWS Global Accelerator to improve routing and connection reliability to the nearest AWS edge location — it does not remove or raise the ~1.25 Gbps per-tunnel throughput cap. Multiple tunnels with ECMP are still required to scale aggregate throughput."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "route53-nested-latency-weighted-canary",
@@ -537,7 +542,8 @@
           "A failover policy satisfies automatic Region failover but abandons latency-based routing entirely under normal conditions (violating the first requirement), and a manual opt-in CNAME doesn't deliver the required automatic 5% canary split."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "privatelink-saas-provider-model",
@@ -617,7 +623,8 @@
           "Sharing a Transit Gateway via RAM grants full network-layer reachability into all of Provider Co.'s TGW-attached VPCs to any account that attaches — the opposite of hiding infrastructure — and it isn't designed for onboarding untrusted third-party accounts the way PrivateLink's explicit accept/reject model is."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "iam-permissions-boundary-privilege-escalation",
@@ -702,7 +709,8 @@
           "Denying iam:CreateRole entirely via SCP blocks DevOps from creating any role at all, including legitimate ones for application services — violating the requirement that developers must still be able to create functional roles. Routine break-glass root access is also a security anti-pattern and heavy operational overhead."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "organizations-invite-existing-accounts",
@@ -772,7 +780,8 @@
           "SCPs are the correct org-level control for this, not per-account IAM policies — IAM policies can't provide the same organization-wide guardrail enforcement, and manually rigging temporary IAM blocks across 15 separate accounts is far higher operational overhead than simple OU placement."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "scp-prevent-root-disable-cloudtrail",
@@ -857,7 +866,8 @@
           "IAM Access Analyzer identifies external/unintended access and unused permissions for review — it doesn't proactively revoke permissions in real time to block specific API calls; this describes a capability Access Analyzer doesn't have."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "control-tower-landing-zone-account-factory",
@@ -952,7 +962,8 @@
           "Retrofitting guardrails after account creation, rather than applying them automatically at creation time, leaves a window of ungoverned accounts and requires ongoing manual remediation — directly contradicting \"automatically applied... from the moment it's created.\""
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "kms-cross-account-key-policy-phi",
@@ -1007,7 +1018,8 @@
           "KMS key material is never exportable or shareable by design — that's the core security guarantee of the service, backed by HSMs. This option describes something KMS fundamentally does not support."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "cross-account-role-assume-role-msp",
@@ -1087,7 +1099,8 @@
           "Making the MSP a full member of each client's Organization with a broad SCP is both operationally extreme and gives the MSP far more integration and visibility into the client's environment than a scoped cross-account role requires. SCPs also don't function as a mechanism to grant access to an external account this way — they set maximum permissions within an Organization, not cross-account grants."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "dr-strategy-rto-rpo-warm-standby",
@@ -1157,7 +1170,8 @@
           "Multi-Site Active/Active would comfortably beat the RTO/RPO targets, but it requires running full production capacity in both Regions continuously, directly violating the requirement to avoid that cost."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "gwlb-transparent-firewall-insertion",
@@ -1220,7 +1234,8 @@
           "Classic Load Balancer is a legacy offering lacking the capabilities of both ALB and NLB, and isn't used for this appliance-insertion pattern at all."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "s3-access-points-per-team-permissions",
@@ -1280,7 +1295,8 @@
           "IAM policies attached to identities still ultimately evaluate against the same underlying bucket policy and resource, and don't eliminate the need to reason about one bucket's cross-team effects — Access Points are the AWS feature built specifically for this."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "dynamodb-global-tables-multi-region-writes",
@@ -1343,7 +1359,8 @@
           "ElastiCache is a cache, not a durable system-of-record data store, and isn't designed to be the primary multi-region-write data store for leaderboard data."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "api-gateway-usage-plans-per-customer-throttling",
@@ -1412,7 +1429,8 @@
           "NLB connection limits operate at the network/connection level, not per-authenticated-customer request rate, and can't achieve tiered per-customer throttling tied to billing identity."
         ]
       }
-    }
+    },
+    "category": "integration"
   },
   {
     "id": "step-functions-express-high-volume-iot",
@@ -1472,7 +1490,8 @@
           "Shortening a Standard workflow's timeout doesn't change its per-state-transition pricing model, so it doesn't address the cost problem at this volume."
         ]
       }
-    }
+    },
+    "category": "integration"
   },
   {
     "id": "cloudfront-signed-urls-per-video-access",
@@ -1527,7 +1546,8 @@
           "Geo-blocking restricts by location, not by subscription or payment status, and doesn't address the actual requirement."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "ec2-cluster-placement-group-hpc",
@@ -1595,7 +1615,8 @@
           "Spreading instances across multiple AZs would significantly increase inter-instance latency from inter-AZ network hops, working directly against the stated bottleneck."
         ]
       }
-    }
+    },
+    "category": "compute"
   },
   {
     "id": "vpc-gateway-endpoint-free-s3-access",
@@ -1665,7 +1686,8 @@
           "PrivateLink is the general mechanism behind interface endpoints to partner/custom services — unnecessary and not free, when a Gateway endpoint already solves this exact S3 case at no cost."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "well-architected-cost-pillar-unused-commitments",
@@ -1735,7 +1757,8 @@
           "Operational Excellence concerns running, monitoring, and improving operational processes — this finding is a purchasing decision, not a process gap."
         ]
       }
-    }
+    },
+    "category": "cost-management"
   },
   {
     "id": "cost-anomaly-detection-vs-budgets",
@@ -1797,7 +1820,8 @@
           "CUR is raw line-item billing data meant for custom analysis, not an alerting mechanism at all."
         ]
       }
-    }
+    },
+    "category": "cost-management"
   },
   {
     "id": "savings-plan-org-sharing-opt-out",
@@ -1860,7 +1884,8 @@
           "Savings Plans provide a discount on usage up to a committed spend rate rather than a finite consumable 'capacity'; even if the commitment were fully applied elsewhere, the excluded account would still get its own On-Demand rate for its usage rather than zero discount specifically because others 'used it up.'"
         ]
       }
-    }
+    },
+    "category": "cost-management"
   },
   {
     "id": "config-conformance-packs-auto-remediation",
@@ -1935,7 +1960,8 @@
           "Consolidating 30 accounts into one is an extreme, high-risk restructuring that eliminates the security and blast-radius benefits of multi-account separation — not a reasonable response to a rule-management problem."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "backup-vault-lock-compliance-mode-ransomware",
@@ -2012,7 +2038,8 @@
           "An SCP denying delete actions could, in principle, still be modified or removed by someone with sufficient Organizations-level permissions — it isn't the purpose-built, irreversible compliance guarantee Vault Lock's compliance mode specifically provides."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "compute-optimizer-detailed-rightsizing",
@@ -2074,7 +2101,8 @@
           "AWS Config checks resource configuration against compliance rules, not performance or utilization-based sizing recommendations."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "xray-microservices-latency-bottleneck",
@@ -2141,7 +2169,8 @@
           "CloudTrail records API management-plane activity — who changed what — not application request latency or tracing, and is unrelated to this troubleshooting need."
         ]
       }
-    }
+    },
+    "category": "developer-tools"
   },
   {
     "id": "migration-6rs-repurchase-saas",
@@ -2208,7 +2237,8 @@
           "Refactor means re-architecting the application to be cloud-native — a much larger investment than needed when an existing SaaS product already solves the problem outright."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "dms-sct-heterogeneous-oracle-aurora",
@@ -2280,7 +2310,8 @@
           "A manual CSV export/import loses all stored procedures and triggers, which aren't captured in a data-only export, and would require significant downtime during the full export/import window — failing both stated requirements."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "fargate-spot-batch-cost-optimization",
@@ -2355,7 +2386,8 @@
           "A Savings Plan requires a long-term steady-usage commitment and offers a smaller discount than Spot for a workload that is explicitly interruptible and restart-tolerant — Spot is the better fit given the stated fault tolerance."
         ]
       }
-    }
+    },
+    "category": "compute"
   },
   {
     "id": "snow-family-petabyte-migration-bandwidth",
@@ -2431,7 +2463,8 @@
           "Provisioning a new Direct Connect connection takes significant lead time (often weeks) to establish and is a recurring infrastructure commitment — a heavier, slower-to-provision solution than shipping a Snow device for a one-time bulk transfer."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "cdk-vs-cloudformation-programmatic-iac",
@@ -2490,7 +2523,8 @@
           "Terraform could achieve similar programmatic IaC goals, but it isn't natively CloudFormation-based — it uses its own state file and engine, not CloudFormation stacks — while the requirement is specifically to retain CloudFormation's own stack management underneath, which only CDK provides."
         ]
       }
-    }
+    },
+    "category": "developer-tools"
   },
   {
     "id": "aurora-global-database-vs-cross-region-replicas",
@@ -2560,7 +2594,8 @@
           "DMS is a migration and one-off/ongoing replication tool, not a purpose-built multi-region high-availability solution — it lacks Aurora Global Database's managed failover tooling and sub-second replication lag guarantee."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "cross-account-cicd-pipeline-build-once-promote",
@@ -2625,7 +2660,8 @@
           "Three independently triggered workflows can't guarantee the same artifact is promoted unchanged across accounts, and provide no single controlled approval gate before Prod."
         ]
       }
-    }
+    },
+    "category": "developer-tools"
   },
   {
     "id": "kinesis-vs-sqs-fifo-multi-consumer-replay",
@@ -2687,7 +2723,8 @@
           "Fanning out through SNS to per-system SQS queues still inherits SQS's lack of retention-based replay once messages are consumed and deleted, and a standard SNS topic doesn't guarantee ordering the way a Kinesis partition key does."
         ]
       }
-    }
+    },
+    "category": "analytics"
   },
   {
     "id": "global-accelerator-vs-cloudfront-udp-gaming",
@@ -2753,7 +2790,8 @@
           "An ALB operates within a single Region at Layer 7 (HTTP) — it provides neither multi-Region routing nor UDP support."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "lake-formation-fine-grained-data-lake-permissions",
@@ -2818,7 +2856,8 @@
           "S3-object-level IAM policies operate at object/prefix granularity, not table, column, or row granularity within a shared table — they don't achieve the fine-grained requirement described."
         ]
       }
-    }
+    },
+    "category": "analytics"
   },
   {
     "id": "fsx-lustre-hpc-ml-training-throughput",
@@ -2882,7 +2921,8 @@
           "EBS Multi-Attach lets a small number of Nitro instances attach the same block volume, but it's a block device, not a shared file system, and isn't designed for hundreds of concurrently mounted GPU instances with S3 integration."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "rds-multi-az-existing-single-instance-outages",
@@ -2937,7 +2977,8 @@
           "More frequent snapshots slightly reduce the potential data-loss window but do nothing to reduce the roughly 45-minute restore-and-recovery time itself, and don't address planned-maintenance downtime at all."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "guardduty-security-hub-automated-remediation",
@@ -3002,7 +3043,8 @@
           "GuardDuty uses threat intelligence and behavioral/anomaly detection across VPC Flow Logs, DNS logs, and CloudTrail that Config's rule-based configuration checks don't replicate — Config checks static configuration state, not the same detection capability, so it isn't a like-for-like replacement."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "rds-proxy-lambda-connection-exhaustion",
@@ -3062,7 +3104,8 @@
           "A larger instance class raises the max_connections ceiling somewhat, but Lambda's connection-per-invocation pattern can still exhaust any fixed ceiling under a big enough spike, and this is a more expensive, less targeted fix than RDS Proxy's purpose-built connection pooling."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "application-discovery-service-migration-hub-wave-planning",
@@ -3127,7 +3170,8 @@
           "Over-provisioning to the largest instance size to hedge against missing data wastes significant cost and still doesn't address the missing dependency-mapping problem — Discovery Service provides the data needed to right-size accurately instead of guessing."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "mgn-rehost-vmware-minimal-downtime-cutover",
@@ -3190,7 +3234,8 @@
           "DataSync moves files and objects between storage systems (e.g. NFS/SMB to S3/EFS) — it doesn't replicate entire server volumes for a lift-and-shift server migration."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "strangler-fig-api-gateway-monolith-modernization",
@@ -3259,7 +3304,8 @@
           "Application Discovery Service is a pre-migration inventory and dependency-mapping tool for planning a lift-and-shift wave, not an architectural pattern for incremental application modernization."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "datasync-vs-storage-gateway-onetime-vs-ongoing",
@@ -3339,7 +3385,8 @@
           "Snowball Edge is for offline, physical bulk data transfer, typically when network bandwidth is insufficient — it doesn't address the ongoing, indefinite on-premises file access requirement in (2), and nothing in (1) suggests bandwidth is the constraint that would favor it over DataSync."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "app2container-dotnet-monolith-containerization",
@@ -3407,7 +3454,8 @@
           "Elastic Beanstalk is a PaaS that deploys applications onto managed infrastructure it provisions itself — it doesn't containerize an existing app for ECS or generate ECS task definitions."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "mgn-rehost-vs-replatform-database-licensing-deadline",
@@ -3482,7 +3530,8 @@
           "Manually re-creating the schema and stored procedures on RDS for SQL Server is still a manual rebuild that introduces significant risk of subtle behavioral differences and requires far more validation effort than a straight rehost under a tight deadline — MGN's as-is replication avoids re-implementing anything by hand."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "vmware-cloud-on-aws-preserve-tooling-deadline",
@@ -3546,7 +3595,8 @@
           "Delaying the data center exit isn't viable given a fixed exit deadline (often driven by an expiring lease or contract) — the company needs a migration approach that fits the existing timeline, which VMware Cloud on AWS provides."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "ram-share-transit-gateway-org-wide",
@@ -3626,7 +3676,8 @@
           "Granting AdministratorAccess in the Network account is a massive, unnecessary security exposure — RAM's resource sharing avoids ever granting broad account-level access at all."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "scp-baseline-fullawsaccess-deny-list",
@@ -3706,7 +3757,8 @@
           "Enumerating every AWS action except a handful to block isn't how SCPs are practically authored — this describes an impractical approach compared to the simple deny-list layered on top of FullAWSAccess."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "iam-identity-center-permission-sets-vs-per-account-users",
@@ -3791,7 +3843,8 @@
           "Deploying separate Active Directory instances per account multiplies management overhead rather than centralizing it, and doesn't integrate with one existing corporate identity provider in one place."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "cloudtrail-org-trail-log-archive-account",
@@ -3846,7 +3899,8 @@
           "AWS Config aggregators consolidate configuration compliance data, not CloudTrail API activity logs — the wrong service for this specific auditing requirement."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "direct-connect-gateway-multi-region-vif",
@@ -3931,7 +3985,8 @@
           "VPC peering doesn't provide access back to the on-premises network at all — peering only connects VPCs to each other, not to an on-premises Direct Connect circuit."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "route53-resolver-hybrid-dns-inbound-outbound",
@@ -3996,7 +4051,8 @@
           "Direct Connect provides network connectivity only — it has no DNS forwarding capability built in."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "organizations-tag-policies-cost-center",
@@ -4056,7 +4112,8 @@
           "Granting the finance team direct tag-editing permissions across every account is an ongoing manual workaround rather than a scalable, centrally enforced standard, and doesn't prevent tags from drifting again."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "eventbridge-cross-account-central-security-bus",
@@ -4111,7 +4168,8 @@
           "Manual, periodic export and import is not automated, doesn't scale, and introduces significant delay unsuitable for security alerting."
         ]
       }
-    }
+    },
+    "category": "integration"
   },
   {
     "id": "network-firewall-centralized-inspection-vpc",
@@ -4191,7 +4249,8 @@
           "WAF operates at Layer 7 for HTTP(S) traffic to specific resources like ALBs — it doesn't provide general outbound network-layer traffic inspection for all VPC traffic."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "customizations-for-control-tower-cfct",
@@ -4276,7 +4335,8 @@
           "Requiring manual launch of a Service Catalog product per new account still requires a manual step for every account, rather than the fully automatic application CfCT provides."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "secrets-manager-cross-account-resource-policy",
@@ -4351,7 +4411,8 @@
           "Hardcoding secrets into application configuration is a serious security anti-pattern with no rotation or centralized access control at all."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "access-analyzer-org-external-access-findings",
@@ -4426,7 +4487,8 @@
           "The IAM policy simulator tests specific hypothetical requests one at a time — it isn't designed to continuously and automatically discover unintended external access across many accounts."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "ram-share-route53-private-hosted-zone",
@@ -4491,7 +4553,8 @@
           "Resolver outbound endpoints forward queries to external DNS servers; they aren't the mechanism for directly associating multiple accounts' VPCs with one centrally managed private hosted zone."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "aurora-serverless-v2-unpredictable-workload",
@@ -4557,7 +4620,8 @@
           "DynamoDB is a different, NoSQL data model — the requirement specifies a relational MySQL-compatible database, so switching data models isn't the fit here."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "elasticache-redis-vs-memcached-leaderboard",
@@ -4620,7 +4684,8 @@
           "CloudFront and S3 caching serve static content at the edge; they don't provide an in-memory application data cache with data-structure support like sorted sets."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "s3-intelligent-tiering-new-unpredictable-access",
@@ -4690,7 +4755,8 @@
           "A blanket 30-day lifecycle rule applies the same fixed timeline to every object regardless of its actual access pattern, incurring early-deletion or retrieval fees for objects that don't fit that assumed pattern."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "msk-vs-kinesis-kafka-compatibility",
@@ -4752,7 +4818,8 @@
           "EventBridge is an event bus for rule-based routing between services, not a Kafka-compatible high-throughput streaming log."
         ]
       }
-    }
+    },
+    "category": "analytics"
   },
   {
     "id": "api-gateway-mutual-tls-b2b",
@@ -4819,7 +4886,8 @@
           "Resource policies restricting to a VPC endpoint control network-path-based access for private APIs; they don't verify a client certificate either."
         ]
       }
-    }
+    },
+    "category": "integration"
   },
   {
     "id": "waf-shield-advanced-new-public-app",
@@ -4895,7 +4963,8 @@
           "CloudFront provides some inherent edge-scale absorption, but by itself it doesn't provide cost protection, DRT access, or application-layer rule enforcement."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "dynamodb-single-table-vs-multi-table-design",
@@ -4955,7 +5024,8 @@
           "A Streams-based denormalization pipeline into a separate join table adds significant architectural complexity and eventual-consistency lag, when a well-designed single table already achieves the same goal directly."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "cognito-user-pools-federated-social-saml",
@@ -5020,7 +5090,8 @@
           "Cognito identity pools grant temporary AWS credentials for accessing AWS resources directly, but rely on a user pool or another identity provider to actually authenticate the user first."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "elasticache-global-datastore-vs-dynamodb-global-tables-session",
@@ -5086,7 +5157,8 @@
           "S3 is an object store with much higher latency than an in-memory cache and isn't suited to rapidly-changing, low-latency session data."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "redshift-serverless-vs-provisioned-variable-load",
@@ -5148,7 +5220,8 @@
           "Manually resizing before known spikes still requires managing cluster sizing, and doesn't help with unpredictable spikes that aren't known in advance."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "iot-core-mqtt-device-fleet",
@@ -5210,7 +5283,8 @@
           "A self-managed MQTT broker on EC2 requires building and operating exactly the device-scale connection management, security, and routing infrastructure IoT Core already provides."
         ]
       }
-    }
+    },
+    "category": "iot"
   },
   {
     "id": "eks-fargate-profiles-multi-tenant-isolation",
@@ -5269,7 +5343,8 @@
           "A separate EKS cluster per tenant provides isolation, but managing a full separate cluster per tenant is far more operational overhead than Fargate profiles per namespace within one cluster."
         ]
       }
-    }
+    },
+    "category": "compute"
   },
   {
     "id": "vpc-lattice-cross-account-service-network",
@@ -5346,7 +5421,8 @@
           "Setting up a separate PrivateLink endpoint service per microservice individually is exactly the manual, per-service setup overhead the requirement wants to avoid."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "cloudfront-origin-groups-failover",
@@ -5414,7 +5490,8 @@
           "Global Accelerator operates in front of regional endpoints at the network layer for TCP/UDP traffic; it isn't the mechanism for CloudFront-to-origin failover."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "lambda-at-edge-vs-cloudfront-functions",
@@ -5489,7 +5566,8 @@
           "Step Functions is a workflow orchestrator for coordinating AWS services, not an edge-compute runtime attached to CloudFront requests at all."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "dynamodb-on-demand-cost-unpredictable-existing",
@@ -5549,7 +5627,8 @@
           "Migrating to RDS is a large, unnecessary re-architecture; RDS doesn't inherently handle unpredictable traffic better than DynamoDB on-demand mode, which was built for exactly this pattern."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "lambda-snapstart-vs-provisioned-concurrency-cold-start",
@@ -5607,7 +5686,8 @@
           "Rewriting the function in a different runtime is a large engineering effort and abandons the existing Java codebase, not the targeted, minimal-effort fix SnapStart provides."
         ]
       }
-    }
+    },
+    "category": "compute"
   },
   {
     "id": "s3-intelligent-tiering-retrofit-existing-bucket",
@@ -5667,7 +5747,8 @@
           "Deleting files based on a blanket 12-month rule risks permanently losing data that might still be needed, and doesn't address the actual cost problem for data that should be retained but tiered more cheaply."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "codedeploy-blue-green-ecs-risky-deployment",
@@ -5737,7 +5818,8 @@
           "Batching more changes into less frequent releases actually increases the risk and blast radius of each individual deployment."
         ]
       }
-    }
+    },
+    "category": "developer-tools"
   },
   {
     "id": "drs-existing-single-region-app-dr-posture",
@@ -5796,7 +5878,8 @@
           "AWS's underlying infrastructure resilience protects against AWS's own infrastructure failures, but does nothing to provide cross-region recovery for a single-region-deployed application."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "systems-manager-explorer-opscenter-centralized-ops",
@@ -5866,7 +5949,8 @@
           "Cost Explorer analyzes cost and usage data, not operational health issues like failed patches or alarm states."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "nat-gateway-cost-vpc-endpoint-retrofit",
@@ -5946,7 +6030,8 @@
           "Compressing data reduces total bytes transferred somewhat, but requires application code changes, which is explicitly ruled out."
         ]
       }
-    }
+    },
+    "category": "networking"
   },
   {
     "id": "sqs-load-leveling-retrofit-overload",
@@ -6001,7 +6086,8 @@
           "Retrying with exponential backoff can help with transient failures somewhat, but doesn't change the synchronous, tightly-coupled architecture causing the overload."
         ]
       }
-    }
+    },
+    "category": "integration"
   },
   {
     "id": "cloudformation-drift-detection-stacksets-remediation",
@@ -6071,7 +6157,8 @@
           "An SCP denying all write actions would break legitimate operational work across all 40 accounts entirely, far too broad a restriction for the stated goal."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "dax-existing-read-heavy-dynamodb-performance",
@@ -6141,7 +6228,8 @@
           "Building a custom denormalized read-copy service via Streams is significantly more engineering effort to build and maintain than adding DAX, which already solves this exact problem as a managed service."
         ]
       }
-    }
+    },
+    "category": "database"
   },
   {
     "id": "trusted-advisor-lambda-automated-cleanup",
@@ -6196,7 +6284,8 @@
           "Disabling the ability to create these resource types entirely would break legitimate, necessary use of them, a wildly disproportionate response."
         ]
       }
-    }
+    },
+    "category": "management"
   },
   {
     "id": "adot-existing-app-observability-gaps",
@@ -6266,7 +6355,8 @@
           "VPC Flow Logs capture network-layer metadata, not application-level distributed traces or custom metrics — removing existing instrumentation would be a loss of observability, not a fix."
         ]
       }
-    }
+    },
+    "category": "developer-tools"
   },
   {
     "id": "mainframe-modernization-cobol-migration",
@@ -6328,7 +6418,8 @@
           "App2Container containerizes existing Java or .NET applications running on standard servers — it isn't built for mainframe COBOL workloads at all."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "hadoop-spark-migration-to-emr",
@@ -6395,7 +6486,8 @@
           "AWS Batch schedules and runs containerized batch jobs generically, but doesn't provide a managed Hadoop or Spark cluster environment itself."
         ]
       }
-    }
+    },
+    "category": "analytics"
   },
   {
     "id": "windows-file-shares-fsx-windows-ad-migration",
@@ -6471,7 +6563,8 @@
           "FSx for Lustre targets high-throughput HPC and ML workloads over a Lustre-native interface — it doesn't provide SMB, NTFS, or Active-Directory-integrated Windows file sharing."
         ]
       }
-    }
+    },
+    "category": "storage"
   },
   {
     "id": "migration-evaluator-business-case",
@@ -6537,7 +6630,8 @@
           "Trusted Advisor provides recommendations for existing AWS resources already running in the account — it doesn't analyze on-premises infrastructure."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "six-rs-retire-vs-retain",
@@ -6628,7 +6722,8 @@
           "This reverses the correct mapping — Retain fits keeping a regulated app in place, and Retire fits decommissioning unused apps, not the other way around."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "modernize-batch-mainframe-job-step-functions-serverless",
@@ -6700,7 +6795,8 @@
           "Chaining SQS queues can approximate sequential processing, but SQS provides no native conditional branching or manual-approval-pause semantics."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "launch-wizard-for-sap",
@@ -6766,7 +6862,8 @@
           "Migration Evaluator estimates cost based on utilization data — it doesn't provision or configure infrastructure according to SAP-specific best practices."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "on-prem-ad-migration-aws-managed-microsoft-ad",
@@ -6843,7 +6940,8 @@
           "IAM Identity Center provides access to AWS accounts and applications for workforce identities, but isn't a replacement for Active Directory's domain services that the migrated Windows applications depend on."
         ]
       }
-    }
+    },
+    "category": "security"
   },
   {
     "id": "mgn-vs-drs-committed-vs-undetermined-cutover",
@@ -6919,7 +7017,8 @@
           "DMS replicates database engines specifically, not entire server or VM instances at the block level — the wrong tool for either scenario described."
         ]
       }
-    }
+    },
+    "category": "migration"
   },
   {
     "id": "oracle-rac-byol-ec2-vs-rds",
@@ -6989,6 +7088,7 @@
           "Converting to Aurora PostgreSQL is a heterogeneous migration requiring significant application and query rework, and doesn't preserve the RAC architecture or existing Oracle licensing investment."
         ]
       }
-    }
+    },
+    "category": "compute"
   }
 ]
