@@ -13,10 +13,10 @@ test("clicking a term in an MCQ question opens the linked flashcard in a new tab
   });
   page.on("pageerror", (err) => consoleErrors.push(err.message));
 
-  await page.goto("/mcq");
+  await page.goto("/mcq/networking/vpc-privatelink-shared-services");
 
-  // vpc-privatelink-shared-services is the first question; its scenario text
-  // links "VPC peering" to the "VPC Peering" flashcard.
+  // vpc-privatelink-shared-services's scenario text links "VPC peering" to
+  // the "VPC Peering" flashcard.
   const link = page.getByRole("link", { name: "VPC peering" }).first();
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute(
