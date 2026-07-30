@@ -12,16 +12,15 @@ export type RenderablePiece =
   | { type: "link"; text: string; href: string };
 
 // Resolves each segment to something a component can render directly, with
-// no knowledge of routing or the card index required at the call site.
-// Terms are only turned into links when `linkable` is true and the
-// referenced card actually exists -- an option can be nothing but a single
-// linked term, so options render terms as inert text rather than links (see
-// McqCard for why that click-target conflict matters).
-export function resolveRichText(segments: McqRichText, linkable: boolean): RenderablePiece[] {
+// no knowledge of routing or the card index required at the call site. Falls
+// back to plain text only if the referenced card doesn't actually exist --
+// every linked term is otherwise a real, clickable link, everywhere it
+// appears (scenario, options, explanations alike).
+export function resolveRichText(segments: McqRichText): RenderablePiece[] {
   return segments.map((segment) => {
     if (typeof segment === "string") return { type: "text", value: segment };
 
-    const location = linkable ? findCardLocation(segment.front) : undefined;
+    const location = findCardLocation(segment.front);
     if (!location) return { type: "term", text: segment.term };
 
     return {

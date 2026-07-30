@@ -28,7 +28,7 @@ test("skipping swaps to a new question without affecting score, and hides once a
   await expect(page.getByText("1 skipped")).toBeVisible();
   await expect(page.getByText("0 correct")).toBeVisible();
 
-  await page.locator('[data-testid="mcq-option"]').first().click();
+  await page.locator('[data-testid="mcq-option"]').first().locator("span").first().click(); // the badge span, not the option text -- text can contain a real link now
   await expect(page.getByRole("button", { name: /Skip this question/ })).not.toBeVisible();
 
   expect(consoleErrors, `Console errors: ${consoleErrors.join("\n")}`).toEqual([]);
@@ -62,7 +62,7 @@ test("a skipped question is requeued to the end of the deck and can be answered 
 
   // Answer every other question, walking the skipped one to the back of the queue.
   for (let i = 0; i < total - 1; i++) {
-    await page.locator('[data-testid="mcq-option"]').first().click();
+    await page.locator('[data-testid="mcq-option"]').first().locator("span").first().click(); // the badge span, not the option text -- text can contain a real link now
     await page.getByRole("button", { name: /Next question|See results/ }).click();
   }
 
@@ -72,7 +72,7 @@ test("a skipped question is requeued to the end of the deck and can be answered 
   await expect(page.getByText("1 skipped")).toBeVisible();
   await expect(page.getByRole("button", { name: /Skip this question/ })).not.toBeVisible();
 
-  await page.locator('[data-testid="mcq-option"]').first().click();
+  await page.locator('[data-testid="mcq-option"]').first().locator("span").first().click(); // the badge span, not the option text -- text can contain a real link now
   await page.getByRole("button", { name: "See results" }).click();
 
   await expect(page.getByText(new RegExp(`/ ${total} correct`))).toBeVisible();
