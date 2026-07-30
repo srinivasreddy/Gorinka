@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Flashcard } from "@/components/Flashcard";
@@ -19,6 +19,8 @@ import type { Card as CardData } from "@/lib/cards";
 
 export default function CategoryFlashcardsPage() {
   const params = useParams<{ category: string }>();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const slug = params.category;
   const category = getCategory(slug);
   const cards = category?.cards ?? [];
@@ -68,6 +70,24 @@ export default function CategoryFlashcardsPage() {
     setLookupStack((stack) => stack.slice(0, -1));
     setLookupRevealed(true);
   }
+
+  // Lets a link from outside the flashcards section (e.g. an MCQ question)
+  // deep-link straight to one card via /flashcards/[category]?card=<front>,
+  // reusing the same lookup stack as an in-card "see also" link or search
+  // result. The param is stripped right after so it doesn't re-trigger on
+  // back/forward navigation within this page.
+  const cardParam = searchParams.get("card");
+  useEffect(() => {
+    if (!cardParam) return;
+    const target = findCardByFront(cardParam);
+    // Deep-linking into a specific card via URL is exactly the kind of
+    // external-system sync effects are for -- there's no user event to hang
+    // this off, since it must fire on initial load too.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (target) startLookup(target);
+    router.replace(`/flashcards/${slug}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardParam]);
 
   function handleRate(rating: Rating) {
     rate(rating);

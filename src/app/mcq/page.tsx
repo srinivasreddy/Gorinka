@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useMcqQueue } from "@/lib/useMcqQueue";
 import { isTypingTarget } from "@/lib/isTypingTarget";
+import { findCardLocation } from "@/lib/cards";
 
 const OPTION_KEYS = ["1", "2", "3", "4"];
 
@@ -59,6 +60,19 @@ export default function McqPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [question, isAnswered, canSkip, selectAnswer, next, skip]);
 
+  // Opens the linked card in a new tab rather than navigating away -- MCQ
+  // session state (score, queue, skips) is in-memory only, so leaving this
+  // page in-place would silently discard progress.
+  function handleCardLink(front: string) {
+    const location = findCardLocation(front);
+    if (!location) return;
+    window.open(
+      `/flashcards/${location.categorySlug}?card=${encodeURIComponent(front)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col items-center bg-muted/30 px-4 py-10 font-sans">
       <div className="w-full max-w-xl">
@@ -85,6 +99,7 @@ export default function McqPage() {
               canSkip={canSkip}
               onSelect={selectAnswer}
               onSkip={skip}
+              onCardLink={handleCardLink}
             />
 
             {isAnswered && (

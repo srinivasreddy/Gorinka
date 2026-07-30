@@ -64,6 +64,20 @@ export function findCardByFront(front: string): Card | undefined {
   return CARD_BY_FRONT.get(front);
 }
 
+const CATEGORY_SLUG_BY_FRONT = new Map(
+  CATEGORIES.flatMap((c) => c.cards.map((card) => [card.front, c.slug] as const))
+);
+
+// Same lookup, but also resolves which category route the card lives under --
+// needed to link to a card from outside the flashcards section entirely (e.g.
+// from an MCQ question), where there's no "current category" to assume.
+export function findCardLocation(front: string): { categorySlug: string; card: Card } | undefined {
+  const card = CARD_BY_FRONT.get(front);
+  const categorySlug = CATEGORY_SLUG_BY_FRONT.get(front);
+  if (!card || !categorySlug) return undefined;
+  return { categorySlug, card };
+}
+
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }

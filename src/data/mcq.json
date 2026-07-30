@@ -2,23 +2,23 @@
   {
     "id": "vpc-privatelink-shared-services",
     "domain": "Networking & Connectivity",
-    "scenario": "A company runs a three-tier web application across two AWS accounts within the same AWS Organization: a Shared Services account hosting a fleet of Network Load Balancers behind a central inspection VPC, and a Workload account hosting the application in a separate VPC. The security team requires that:\n\n- Traffic from the Workload VPC to the Shared Services VPC must never traverse the public internet.\n- The Shared Services team must be able to add or remove consuming accounts without modifying route tables in every workload VPC.\n- The solution must scale to support hundreds of workload VPCs across many accounts in the future without hitting AWS's default VPC peering connection limits per VPC.\n\nWhich solution meets these requirements with the least ongoing operational overhead?",
+    "scenario": "A company runs a three-tier web application across two AWS accounts within the same AWS Organization: a Shared Services account hosting a fleet of <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Network Load Balancers</a> behind a central inspection VPC, and a Workload account hosting the application in a separate VPC. The security team requires that:\n\n- Traffic from the Workload VPC to the Shared Services VPC must never traverse the public internet.\n- The Shared Services team must be able to add or remove consuming accounts without modifying route tables in every workload VPC.\n- The solution must scale to support hundreds of workload VPCs across many accounts in the future without hitting AWS's default <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a> connection limits per VPC.\n\nWhich solution meets these requirements with the least ongoing operational overhead?",
     "options": [
       {
         "key": "A",
-        "text": "Create a VPC Peering connection between the Shared Services VPC and each Workload VPC. Update route tables in every VPC to route traffic to the peered CIDR ranges."
+        "text": "Create a <a href=\"#\" data-card-link=\"VPC Peering\">VPC Peering</a> connection between the Shared Services VPC and each Workload VPC. Update route tables in every VPC to route traffic to the peered CIDR ranges."
       },
       {
         "key": "B",
-        "text": "Create a Transit Gateway, attach every VPC (Shared Services and all Workload VPCs) to it, and configure Transit Gateway route tables to control which VPCs can reach the Shared Services VPC."
+        "text": "Create a <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a>, attach every VPC (Shared Services and all Workload VPCs) to it, and configure Transit Gateway route tables to control which VPCs can reach the Shared Services VPC."
       },
       {
         "key": "C",
-        "text": "Deploy an AWS PrivateLink endpoint service in the Shared Services account fronted by the Network Load Balancers, and create VPC interface endpoints in each Workload VPC that consume the service."
+        "text": "Deploy an <a href=\"#\" data-card-link=\"AWS PrivateLink\">AWS PrivateLink</a> endpoint service in the Shared Services account fronted by the <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Network Load Balancers</a>, and create VPC interface endpoints in each Workload VPC that consume the service."
       },
       {
         "key": "D",
-        "text": "Configure AWS Site-to-Site VPN connections between the Shared Services VPC and each Workload VPC using a Virtual Private Gateway."
+        "text": "Configure <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">AWS Site-to-Site VPN</a> connections between the Shared Services VPC and each Workload VPC using a <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Virtual Private Gateway</a>."
       }
     ],
     "correctKey": "C",
@@ -38,19 +38,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Create a VPC per application team, and use AWS Transit Gateway to connect all 40 VPCs together with a shared services VPC containing common resources."
+        "text": "Create a VPC per application team, and use <a href=\"#\" data-card-link=\"AWS Transit Gateway\">AWS Transit Gateway</a> to connect all 40 VPCs together with a shared services VPC containing common resources."
       },
       {
         "key": "B",
-        "text": "Use VPC sharing (via AWS Resource Access Manager) to share subnets from a single central VPC owned by the platform team's account with each of the 40 application team accounts as participants, allowing each team to launch resources into the shared subnets while the platform team retains ownership of the VPC, route tables, and NACLs."
+        "text": "Use VPC sharing (via <a href=\"#\" data-card-link=\"AWS Resource Access Manager (RAM)\">AWS Resource Access Manager</a>) to share subnets from a single central VPC owned by the platform team's account with each of the 40 application team accounts as participants, allowing each team to launch resources into the shared subnets while the platform team retains ownership of the VPC, route tables, and NACLs."
       },
       {
         "key": "C",
-        "text": "Create a VPC per application team and use VPC peering between each application team's VPC and a shared services VPC to centralize IP address management."
+        "text": "Create a VPC per application team and use <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a> between each application team's VPC and a shared services VPC to centralize IP address management."
       },
       {
         "key": "D",
-        "text": "Grant each application team's IAM role a resource-based policy to create resources directly inside the platform team's VPC, and rely on IAM policies alone to prevent route table modification."
+        "text": "Grant each application team's <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a> a <a href=\"#\" data-card-link=\"IAM: Resource-based policies\">resource-based policy</a> to create resources directly inside the platform team's VPC, and rely on <a href=\"#\" data-card-link=\"AWS IAM\">IAM policies</a> alone to prevent route table modification."
       }
     ],
     "correctKey": "B",
@@ -66,23 +66,23 @@
   {
     "id": "tgw-multi-region-segmentation",
     "domain": "Networking & Connectivity",
-    "scenario": "A global company has 10 VPCs in us-east-1 and 8 VPCs in eu-west-1, plus an on-premises data center connected via Direct Connect to us-east-1. Requirements:\n\n- All VPCs within each Region must be able to communicate with each other and with the on-premises network.\n- Three specific VPCs in us-east-1 hold PCI workloads (the \"Sensitive\" segment) and must NOT be reachable from any eu-west-1 VPC, even though all VPCs will attach to Transit Gateways.\n- Cross-Region traffic between the two Regions' Transit Gateways must never traverse the public internet.\n\nWhich combination of actions meets these requirements?",
+    "scenario": "A global company has 10 VPCs in us-east-1 and 8 VPCs in eu-west-1, plus an on-premises data center connected via <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> to us-east-1. Requirements:\n\n- All VPCs within each Region must be able to communicate with each other and with the on-premises network.\n- Three specific VPCs in us-east-1 hold PCI workloads (the \"Sensitive\" segment) and must NOT be reachable from any eu-west-1 VPC, even though all VPCs will attach to <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a>s.\n- Cross-Region traffic between the two Regions' Transit Gateways must never traverse the public internet.\n\nWhich combination of actions meets these requirements?",
     "options": [
       {
         "key": "A",
-        "text": "Create a single Transit Gateway in us-east-1, attach the eu-west-1 VPCs to it via VPC peering, and use one Transit Gateway route table for all attachments."
+        "text": "Create a single <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> in us-east-1, attach the eu-west-1 VPCs to it via <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a>, and use one Transit Gateway route table for all attachments."
       },
       {
         "key": "B",
-        "text": "Create a Transit Gateway in each Region, connect them with Transit Gateway peering, and use multiple Transit Gateway route tables per Region — associating the Sensitive VPC attachments with a dedicated route table that does not have routes propagated to or from the eu-west-1 attachments."
+        "text": "Create a <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> in each Region, connect them with Transit Gateway peering, and use multiple Transit Gateway route tables per Region — associating the Sensitive VPC attachments with a dedicated route table that does not have routes propagated to or from the eu-west-1 attachments."
       },
       {
         "key": "C",
-        "text": "Create a Transit Gateway in each Region, connect them with a Site-to-Site VPN over the internet, and rely on Security Groups alone in the Sensitive VPCs to block traffic from eu-west-1."
+        "text": "Create a <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> in each Region, connect them with a <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Site-to-Site VPN</a> over the internet, and rely on Security Groups alone in the Sensitive VPCs to block traffic from eu-west-1."
       },
       {
         "key": "D",
-        "text": "Create separate VPC peering connections between every pair of VPCs across both Regions and use NACLs to block traffic from eu-west-1 into the Sensitive VPCs."
+        "text": "Create separate <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a> connections between every pair of VPCs across both Regions and use NACLs to block traffic from eu-west-1 into the Sensitive VPCs."
       }
     ],
     "correctKey": "B",
@@ -98,23 +98,23 @@
   {
     "id": "dx-resiliency-toolkit-vpn-backup",
     "domain": "Networking & Connectivity",
-    "scenario": "A financial services company has a single AWS Direct Connect connection from its data center to a Direct Connect location, terminating in a private VIF on a Virtual Private Gateway. Requirements:\n\n- Loss of any single Direct Connect location or device must not cause a full connectivity outage.\n- The design should follow an AWS-documented resiliency model that eliminates single points of failure in the Direct Connect path.\n- If all Direct Connect paths fail simultaneously, traffic must automatically fail over to an encrypted path over the internet, with no manual intervention required.\n\nWhich combination of steps satisfies these requirements?",
+    "scenario": "A financial services company has a single <a href=\"#\" data-card-link=\"AWS Direct Connect\">AWS Direct Connect</a> connection from its data center to a Direct Connect location, terminating in a private VIF on a <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Virtual Private Gateway</a>. Requirements:\n\n- Loss of any single Direct Connect location or device must not cause a full connectivity outage.\n- The design should follow an AWS-documented resiliency model that eliminates single points of failure in the Direct Connect path.\n- If all Direct Connect paths fail simultaneously, traffic must automatically fail over to an encrypted path over the internet, with no manual intervention required.\n\nWhich combination of steps satisfies these requirements?",
     "options": [
       {
         "key": "A",
-        "text": "Provision a second Direct Connect connection at the same Direct Connect location, using the same device and cross-connect, and configure equal BGP priority on both."
+        "text": "Provision a second <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connection at the same Direct Connect location, using the same device and cross-connect, and configure equal BGP priority on both."
       },
       {
         "key": "B",
-        "text": "Following the AWS Direct Connect Resiliency Toolkit, provision two Direct Connect connections at two different Direct Connect locations terminating on different devices, and configure a Site-to-Site VPN as a backup path with a less-preferred BGP path (e.g. longer AS_PATH) than the Direct Connect routes."
+        "text": "Following the <a href=\"#\" data-card-link=\"AWS Direct Connect Resiliency Toolkit\">AWS Direct Connect Resiliency Toolkit</a>, provision two Direct Connect connections at two different Direct Connect locations terminating on different devices, and configure a <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Site-to-Site VPN</a> as a backup path with a less-preferred BGP path (e.g. longer AS_PATH) than the Direct Connect routes."
       },
       {
         "key": "C",
-        "text": "Use a single Direct Connect connection with a Link Aggregation Group (LAG) to increase throughput, and rely on Direct Connect's built-in automatic failover to the internet."
+        "text": "Use a single <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connection with a <a href=\"#\" data-card-link=\"AWS Direct Connect Resiliency Toolkit\">Link Aggregation Group (LAG)</a> to increase throughput, and rely on Direct Connect's built-in automatic failover to the internet."
       },
       {
         "key": "D",
-        "text": "Provision two Direct Connect connections at two different Direct Connect locations behind a Direct Connect Gateway and Transit Gateway, and omit a VPN backup since the Direct Connect Gateway is redundant by default."
+        "text": "Provision two <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connections at two different Direct Connect locations behind a <a href=\"#\" data-card-link=\"Direct Connect: Public VIF vs. Private VIF vs. Transit VIF\">Direct Connect Gateway</a> and <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a>, and omit a VPN backup since the Direct Connect Gateway is redundant by default."
       }
     ],
     "correctKey": "B",
@@ -130,7 +130,7 @@
   {
     "id": "vpn-ecmp-throughput-scaling",
     "domain": "Networking & Connectivity",
-    "scenario": "A company connects an on-premises data center to a VPC using a single AWS Site-to-Site VPN connection (two tunnels, active/standby). The on-premises-to-AWS application needs sustained throughput of 3 Gbps, but each VPN tunnel is capped at roughly 1.25 Gbps. The company also wants the design to scale to connect dozens of on-premises sites to hundreds of VPCs in the future without significant added operational complexity, and cannot provision Direct Connect due to a short project timeline. What should a solutions architect recommend?",
+    "scenario": "A company connects an on-premises data center to a VPC using a single <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">AWS Site-to-Site VPN</a> connection (two tunnels, active/standby). The on-premises-to-AWS application needs sustained throughput of 3 Gbps, but each VPN tunnel is capped at roughly 1.25 Gbps. The company also wants the design to scale to connect dozens of on-premises sites to hundreds of VPCs in the future without significant added operational complexity, and cannot provision <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> due to a short project timeline. What should a solutions architect recommend?",
     "options": [
       {
         "key": "A",
@@ -138,15 +138,15 @@
       },
       {
         "key": "B",
-        "text": "Provision multiple Site-to-Site VPN connections to a Transit Gateway and enable Equal Cost Multi-Path (ECMP) routing across the tunnels to aggregate bandwidth, using the Transit Gateway as the hub for future on-premises sites and VPCs."
+        "text": "Provision multiple <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Site-to-Site VPN</a> connections to a <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> and enable <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Equal Cost Multi-Path (ECMP)</a> routing across the tunnels to aggregate bandwidth, using the Transit Gateway as the hub for future on-premises sites and VPCs."
       },
       {
         "key": "C",
-        "text": "Replace the Site-to-Site VPN with a single AWS Client VPN endpoint, which supports higher per-connection throughput than Site-to-Site VPN."
+        "text": "Replace the <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Site-to-Site VPN</a> with a single <a href=\"#\" data-card-link=\"AWS Client VPN\">AWS Client VPN</a> endpoint, which supports higher per-connection throughput than Site-to-Site VPN."
       },
       {
         "key": "D",
-        "text": "Enable Accelerated Site-to-Site VPN on the existing single VPN connection terminating on a Virtual Private Gateway, which removes the per-tunnel throughput cap entirely."
+        "text": "Enable Accelerated <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Site-to-Site VPN</a> on the existing single VPN connection terminating on a <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">Virtual Private Gateway</a>, which removes the per-tunnel throughput cap entirely."
       }
     ],
     "correctKey": "B",
@@ -162,7 +162,7 @@
   {
     "id": "route53-nested-latency-weighted-canary",
     "domain": "Networking & Connectivity",
-    "scenario": "A media company runs an application in two AWS Regions (us-east-1 primary, ap-southeast-1 secondary) behind an Application Load Balancer in each Region. Requirements:\n\n- Under normal conditions, users should be routed to whichever Region gives them the lowest network latency.\n- If the primary Region's ALB becomes unhealthy, traffic must automatically fail over to the secondary Region, without depending on individual clients' DNS caching behavior to eventually pick up the change.\n- The company is also running a canary release in us-east-1 and wants only 5% of us-east-1-directed traffic to reach the canary environment, with the rest going to the stable environment — without altering the latency-based/failover behavior between the two Regions.\n\nHow should a solutions architect design the Route 53 record set to satisfy all of these requirements?",
+    "scenario": "A media company runs an application in two AWS Regions (us-east-1 primary, ap-southeast-1 secondary) behind an <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Application Load Balancer</a> in each Region. Requirements:\n\n- Under normal conditions, users should be routed to whichever Region gives them the lowest network latency.\n- If the primary Region's ALB becomes unhealthy, traffic must automatically fail over to the secondary Region, without depending on individual clients' DNS caching behavior to eventually pick up the change.\n- The company is also running a canary release in us-east-1 and wants only 5% of us-east-1-directed traffic to reach the canary environment, with the rest going to the stable environment — without altering the latency-based/failover behavior between the two Regions.\n\nHow should a solutions architect design the <a href=\"#\" data-card-link=\"Amazon Route 53\">Route 53</a> record set to satisfy all of these requirements?",
     "options": [
       {
         "key": "A",
@@ -170,15 +170,15 @@
       },
       {
         "key": "B",
-        "text": "Create latency-based alias records for us-east-1 and ap-southeast-1, each with an associated Route 53 health check so an unhealthy Region is automatically excluded from DNS answers. Under the us-east-1 latency record, use a nested weighted record set (95%/5%) as the alias target to split traffic between the stable and canary target groups."
+        "text": "Create <a href=\"#\" data-card-link=\"Route 53: Latency-based routing policy\">latency-based alias records</a> for us-east-1 and ap-southeast-1, each with an associated <a href=\"#\" data-card-link=\"Route 53: Failover routing policy\">Route 53 health check</a> so an unhealthy Region is automatically excluded from DNS answers. Under the us-east-1 latency record, use a <a href=\"#\" data-card-link=\"Route 53: Weighted routing policy\">nested weighted record set</a> (95%/5%) as the alias target to split traffic between the stable and canary target groups."
       },
       {
         "key": "C",
-        "text": "Create a single weighted record set with the two Regions weighted 50/50, attach a health check to each weighted record, and manually adjust the weights during each canary release to redirect traffic."
+        "text": "Create a single <a href=\"#\" data-card-link=\"Route 53: Weighted routing policy\">weighted record set</a> with the two Regions weighted 50/50, attach a health check to each weighted record, and manually adjust the weights during each canary release to redirect traffic."
       },
       {
         "key": "D",
-        "text": "Create a failover routing policy with us-east-1 as primary and ap-southeast-1 as secondary, and use a separate CNAME for canary traffic that customers must opt into manually."
+        "text": "Create a <a href=\"#\" data-card-link=\"Route 53: Failover routing policy\">failover routing policy</a> with us-east-1 as primary and ap-southeast-1 as secondary, and use a separate CNAME for canary traffic that customers must opt into manually."
       }
     ],
     "correctKey": "B",
@@ -198,19 +198,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Provider Co. creates a VPC peering connection with each customer's VPC and shares route tables so customers can access the API using Provider Co.'s private IP addresses directly."
+        "text": "Provider Co. creates a <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a> connection with each customer's VPC and shares route tables so customers can access the API using Provider Co.'s private IP addresses directly."
       },
       {
         "key": "B",
-        "text": "Provider Co. creates an AWS PrivateLink endpoint service backed by a Network Load Balancer in front of the API, requires manual acceptance for new endpoint connections, and associates a verified private DNS name so customers can resolve api.providerco.com to the interface endpoint inside their own VPC."
+        "text": "Provider Co. creates an <a href=\"#\" data-card-link=\"AWS PrivateLink\">AWS PrivateLink</a> endpoint service backed by a <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Network Load Balancer</a> in front of the API, requires manual acceptance for new endpoint connections, and associates a verified private DNS name so customers can resolve api.providerco.com to the interface endpoint inside their own VPC."
       },
       {
         "key": "C",
-        "text": "Provider Co. publishes the API through a public Amazon API Gateway endpoint secured with API keys, and instructs customers to allow-list Provider Co.'s IP ranges in their own VPC's outbound security group rules."
+        "text": "Provider Co. publishes the API through a public <a href=\"#\" data-card-link=\"Amazon API Gateway\">Amazon API Gateway</a> endpoint secured with API keys, and instructs customers to allow-list Provider Co.'s IP ranges in their own VPC's outbound security group rules."
       },
       {
         "key": "D",
-        "text": "Provider Co. creates a Transit Gateway and shares it with each customer account via AWS Resource Access Manager, and each customer attaches their VPC to Provider Co.'s Transit Gateway."
+        "text": "Provider Co. creates a <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> and shares it with each customer account via <a href=\"#\" data-card-link=\"AWS Resource Access Manager (RAM)\">AWS Resource Access Manager</a>, and each customer attaches their VPC to Provider Co.'s Transit Gateway."
       }
     ],
     "correctKey": "B",
@@ -226,23 +226,23 @@
   {
     "id": "iam-permissions-boundary-privilege-escalation",
     "domain": "Identity & Access Management",
-    "scenario": "A company wants to delegate to its DevOps team the ability to create new IAM roles and policies for their applications, but must guarantee that no one — including the DevOps team itself, even by accident — can ever create or escalate a role to administrator-level access. Developers still need to be able to create functional roles for legitimate application services. Which approach achieves this?",
+    "scenario": "A company wants to delegate to its DevOps team the ability to create new <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>s and policies for their applications, but must guarantee that no one — including the DevOps team itself, even by accident — can ever create or escalate a role to administrator-level access. Developers still need to be able to create functional roles for legitimate application services. Which approach achieves this?",
     "options": [
       {
         "key": "A",
-        "text": "Attach an explicit Deny policy to each DevOps IAM user for iam:CreateRole with a condition matching the AdministratorAccess managed policy ARN."
+        "text": "Attach an explicit Deny policy to each DevOps <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a> for iam:CreateRole with a condition matching the AdministratorAccess managed policy ARN."
       },
       {
         "key": "B",
-        "text": "Set a permissions boundary on the DevOps IAM role that caps the maximum permissions any role or user the DevOps team creates can ever have, and grant DevOps iam:CreateRole/iam:PutRolePolicy permissions only when that boundary is specified."
+        "text": "Set a <a href=\"#\" data-card-link=\"IAM: Permissions Boundaries\">permissions boundary</a> on the DevOps <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a> that caps the maximum permissions any role or user the DevOps team creates can ever have, and grant DevOps iam:CreateRole/iam:PutRolePolicy permissions only when that boundary is specified."
       },
       {
         "key": "C",
-        "text": "Use an AWS Config rule to detect any IAM role that has AdministratorAccess attached and automatically delete it on a scheduled basis."
+        "text": "Use an <a href=\"#\" data-card-link=\"AWS Config\">AWS Config rule</a> to detect any <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a> that has AdministratorAccess attached and automatically delete it on a scheduled basis."
       },
       {
         "key": "D",
-        "text": "Create a Service Control Policy at the OU level that denies iam:CreateRole entirely, and grant DevOps engineers break-glass root access whenever they need to create a new role."
+        "text": "Create a <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">Service Control Policy</a> at the OU level that denies iam:CreateRole entirely, and grant DevOps engineers break-glass root access whenever they need to create a new role."
       }
     ],
     "correctKey": "B",
@@ -258,7 +258,7 @@
   {
     "id": "organizations-invite-existing-accounts",
     "domain": "Identity & Access Management",
-    "scenario": "A company acquires another company and must bring the acquired company's 15 existing standalone AWS accounts into its AWS Organization. Requirements:\n\n- Consolidated billing must cover all accounts, including the newly acquired ones.\n- The acquiring company's existing SCP guardrails must eventually apply to the acquired accounts, but NOT immediately — there needs to be a grace period while each acquired account's workloads are assessed for compliance.\n- The acquired accounts' workloads must keep running without service interruption throughout the process.\n\nWhich approach satisfies these requirements?",
+    "scenario": "A company acquires another company and must bring the acquired company's 15 existing standalone AWS accounts into its AWS Organization. Requirements:\n\n- Consolidated billing must cover all accounts, including the newly acquired ones.\n- The acquiring company's existing <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> guardrails must eventually apply to the acquired accounts, but NOT immediately — there needs to be a grace period while each acquired account's workloads are assessed for compliance.\n- The acquired accounts' workloads must keep running without service interruption throughout the process.\n\nWhich approach satisfies these requirements?",
     "options": [
       {
         "key": "A",
@@ -266,15 +266,15 @@
       },
       {
         "key": "B",
-        "text": "Send an invitation from the Organization's management account to each of the 15 existing accounts to join the Organization; place newly joined accounts into a dedicated, temporary OU with no (or minimal) SCPs attached, then move each account into the appropriate production OU with full SCPs once its assessment is complete."
+        "text": "Send an invitation from the Organization's management account to each of the 15 existing accounts to join the Organization; place newly joined accounts into a dedicated, temporary OU with no (or minimal) <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCPs</a> attached, then move each account into the appropriate production OU with full SCPs once its assessment is complete."
       },
       {
         "key": "C",
-        "text": "Use AWS Control Tower's Account Factory to enroll the 15 existing accounts, which immediately and unconditionally attaches all guardrails currently applied to other accounts."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Control Tower\">AWS Control Tower's Account Factory</a> to enroll the 15 existing accounts, which immediately and unconditionally attaches all guardrails currently applied to other accounts."
       },
       {
         "key": "D",
-        "text": "Add the 15 accounts to the Organization directly under the root, and rely on IAM policies within each account to temporarily block actions until the account is assessed."
+        "text": "Add the 15 accounts to the Organization directly under the root, and rely on <a href=\"#\" data-card-link=\"AWS IAM\">IAM policies</a> within each account to temporarily block actions until the account is assessed."
       }
     ],
     "correctKey": "B",
@@ -290,23 +290,23 @@
   {
     "id": "scp-prevent-root-disable-cloudtrail",
     "domain": "Identity & Access Management",
-    "scenario": "A security team wants to guarantee that no IAM principal in any account within a specific OU (containing all production accounts) can ever disable AWS CloudTrail, delete CloudTrail logs, or disable GuardDuty — including the account's own root user or an administrator holding an AdministratorAccess IAM policy. Which approach achieves this guarantee?",
+    "scenario": "A security team wants to guarantee that no IAM principal in any account within a specific OU (containing all production accounts) can ever disable <a href=\"#\" data-card-link=\"AWS CloudTrail\">AWS CloudTrail</a>, delete CloudTrail logs, or disable GuardDuty — including the account's own root user or an administrator holding an AdministratorAccess <a href=\"#\" data-card-link=\"AWS IAM\">IAM policy</a>. Which approach achieves this guarantee?",
     "options": [
       {
         "key": "A",
-        "text": "Attach an IAM policy to every administrator role in each production account explicitly denying cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector."
+        "text": "Attach an <a href=\"#\" data-card-link=\"AWS IAM\">IAM policy</a> to every administrator role in each production account explicitly denying cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector."
       },
       {
         "key": "B",
-        "text": "Attach a Service Control Policy to the production OU that explicitly denies cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector, and ensure no SCP elsewhere in the hierarchy re-allows them."
+        "text": "Attach a <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">Service Control Policy</a> to the production OU that explicitly denies cloudtrail:StopLogging, cloudtrail:DeleteTrail, and guardduty:DeleteDetector, and ensure no <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> elsewhere in the hierarchy re-allows them."
       },
       {
         "key": "C",
-        "text": "Enable an AWS Config managed rule that flags CloudTrail or GuardDuty being disabled, and send an SNS notification to the security team when this happens."
+        "text": "Enable an <a href=\"#\" data-card-link=\"AWS Config\">AWS Config</a> managed rule that flags CloudTrail or GuardDuty being disabled, and send an SNS notification to the security team when this happens."
       },
       {
         "key": "D",
-        "text": "Use IAM Access Analyzer to continuously monitor and automatically revoke any permissions related to CloudTrail or GuardDuty modification across all production accounts."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS IAM Access Analyzer\">IAM Access Analyzer</a> to continuously monitor and automatically revoke any permissions related to CloudTrail or GuardDuty modification across all production accounts."
       }
     ],
     "correctKey": "B",
@@ -326,19 +326,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Manually create each AWS account using AWS Organizations, write custom CloudFormation StackSets to deploy baseline security resources to each account, and build an internal ticketing system for account requests."
+        "text": "Manually create each AWS account using <a href=\"#\" data-card-link=\"AWS Organizations\">AWS Organizations</a>, write custom <a href=\"#\" data-card-link=\"AWS CloudFormation\">CloudFormation StackSets</a> to deploy baseline security resources to each account, and build an internal ticketing system for account requests."
       },
       {
         "key": "B",
-        "text": "Use AWS Control Tower to set up a landing zone with preventive (SCP-based) and detective (Config-based) guardrails, and let engineering teams self-service provision new accounts through the Account Factory, each automatically inheriting the landing zone's guardrails."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Control Tower\">AWS Control Tower</a> to set up a landing zone with preventive (<a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a>-based) and detective (Config-based) guardrails, and let engineering teams self-service provision new accounts through the <a href=\"#\" data-card-link=\"AWS Control Tower\">Account Factory</a>, each automatically inheriting the landing zone's guardrails."
       },
       {
         "key": "C",
-        "text": "Create one large shared AWS account for all 500 engineers and use IAM policies alone to separate teams, avoiding multi-account management entirely."
+        "text": "Create one large shared AWS account for all 500 engineers and use <a href=\"#\" data-card-link=\"AWS IAM\">IAM policies</a> alone to separate teams, avoiding multi-account management entirely."
       },
       {
         "key": "D",
-        "text": "Use AWS Organizations with SCPs only, and let each engineering team independently create and configure their own accounts outside any centralized governance model, retrofitting guardrails later."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Organizations\">AWS Organizations</a> with <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCPs</a> only, and let each engineering team independently create and configure their own accounts outside any centralized <a href=\"#\" data-card-link=\"AWS Backup: Vault Lock\">governance mode</a>l, retrofitting guardrails later."
       }
     ],
     "correctKey": "B",
@@ -362,7 +362,7 @@
       },
       {
         "key": "B",
-        "text": "Create customer managed KMS keys in the Security account with a key policy that grants specific application accounts kms:Encrypt/kms:Decrypt/kms:GenerateDataKey (but not kms:PutKeyPolicy or kms:ScheduleKeyDeletion), reference the key by ARN in each application account's S3 default encryption setting, enable automatic key rotation, and rely on AWS CloudTrail (which logs all KMS API calls) for centralized auditing."
+        "text": "Create customer managed KMS keys in the Security account with a key policy that grants specific application accounts kms:Encrypt/kms:Decrypt/kms:GenerateDataKey (but not kms:PutKeyPolicy or kms:ScheduleKeyDeletion), reference the key by ARN in each application account's S3 default encryption setting, enable automatic key rotation, and rely on <a href=\"#\" data-card-link=\"AWS CloudTrail\">AWS CloudTrail</a> (which logs all KMS API calls) for centralized auditing."
       },
       {
         "key": "C",
@@ -390,19 +390,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Each client creates an IAM user for the MSP with an access key and shares the credentials over a secure channel; the MSP stores these credentials in its own secrets manager."
+        "text": "Each client creates an <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a> for the MSP with an access key and shares the credentials over a secure channel; the MSP stores these credentials in its own secrets manager."
       },
       {
         "key": "B",
-        "text": "Each client creates an IAM role with a trust policy allowing the MSP's AWS account to assume it (optionally requiring an external ID), attaches a permissions policy scoped to only what that client authorizes, and MSP engineers use AWS STS AssumeRole from their own IAM identities to obtain temporary credentials scoped to that role whenever needed."
+        "text": "Each client creates an <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a> with a <a href=\"#\" data-card-link=\"IAM: Resource-based policies\">trust policy</a> allowing the MSP's AWS account to assume it (optionally requiring an external ID), attaches a permissions policy scoped to only what that client authorizes, and MSP engineers use <a href=\"#\" data-card-link=\"AWS STS\">AWS STS AssumeRole</a> from their own IAM identities to obtain temporary credentials scoped to that role whenever needed."
       },
       {
         "key": "C",
-        "text": "The MSP creates a single IAM role in its own account with AdministratorAccess and shares that role's credentials with all client accounts to simplify management."
+        "text": "The MSP creates a single <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a> in its own account with AdministratorAccess and shares that role's credentials with all client accounts to simplify management."
       },
       {
         "key": "D",
-        "text": "Each client adds the MSP's AWS account as a member of their AWS Organization and applies an SCP granting the MSP account full access to all resources."
+        "text": "Each client adds the MSP's AWS account as a member of their AWS Organization and applies an <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> granting the MSP account full access to all resources."
       }
     ],
     "correctKey": "B",
@@ -422,19 +422,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Continue with Backup and Restore, simply taking backups every hour instead of nightly."
+        "text": "Continue with <a href=\"#\" data-card-link=\"DR strategy: Backup and Restore\">Backup and Restore</a>, simply taking backups every hour instead of nightly."
       },
       {
         "key": "B",
-        "text": "Adopt Pilot Light: keep only the database continuously replicating in the DR Region, provisioning application servers from scratch during failover."
+        "text": "Adopt <a href=\"#\" data-card-link=\"DR strategy: Pilot Light\">Pilot Light</a>: keep only the database continuously replicating in the DR Region, provisioning application servers from scratch during failover."
       },
       {
         "key": "C",
-        "text": "Adopt Warm Standby: run a scaled-down but fully functional copy of the entire application stack in the DR Region at all times, scaling it up on failover."
+        "text": "Adopt <a href=\"#\" data-card-link=\"DR strategy: Warm Standby\">Warm Standby</a>: run a scaled-down but fully functional copy of the entire application stack in the DR Region at all times, scaling it up on failover."
       },
       {
         "key": "D",
-        "text": "Adopt Multi-Site Active/Active: run full production capacity in both Regions simultaneously, actively serving traffic from both."
+        "text": "Adopt <a href=\"#\" data-card-link=\"DR strategy: Multi-Site Active/Active\">Multi-Site Active/Active</a>: run full production capacity in both Regions simultaneously, actively serving traffic from both."
       }
     ],
     "correctKey": "C",
@@ -454,19 +454,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Application Load Balancer (ALB)"
+        "text": "<a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Application Load Balancer (ALB)</a>"
       },
       {
         "key": "B",
-        "text": "Network Load Balancer (NLB)"
+        "text": "<a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Network Load Balancer</a> (NLB)"
       },
       {
         "key": "C",
-        "text": "Gateway Load Balancer (GWLB)"
+        "text": "<a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Gateway Load Balancer (GWLB)</a>"
       },
       {
         "key": "D",
-        "text": "Classic Load Balancer (CLB)"
+        "text": "<a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Classic Load Balancer (CLB)</a>"
       }
     ],
     "correctKey": "C",
@@ -494,11 +494,11 @@
       },
       {
         "key": "C",
-        "text": "Use S3 Object Lambda to enforce per-application permissions at read time."
+        "text": "Use <a href=\"#\" data-card-link=\"Amazon S3 Object Lambda\">S3 Object Lambda</a> to enforce per-application permissions at read time."
       },
       {
         "key": "D",
-        "text": "Keep a single bucket policy, but split it into 40 separate IAM policies referencing the same bucket ARN."
+        "text": "Keep a single bucket policy, but split it into 40 separate <a href=\"#\" data-card-link=\"AWS IAM\">IAM policies</a> referencing the same bucket ARN."
       }
     ],
     "correctKey": "B",
@@ -518,19 +518,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon Aurora Global Database"
+        "text": "<a href=\"#\" data-card-link=\"What does Aurora Global Database provide?\">Amazon Aurora Global Database</a>"
       },
       {
         "key": "B",
-        "text": "Amazon RDS Multi-AZ"
+        "text": "<a href=\"#\" data-card-link=\"RDS Multi-AZ vs. read replicas — what's the difference?\">Amazon RDS Multi-AZ</a>"
       },
       {
         "key": "C",
-        "text": "Amazon DynamoDB Global Tables"
+        "text": "<a href=\"#\" data-card-link=\"Amazon DynamoDB\">Amazon DynamoDB Global Tables</a>"
       },
       {
         "key": "D",
-        "text": "Amazon ElastiCache with cross-region replication"
+        "text": "<a href=\"#\" data-card-link=\"Amazon ElastiCache\">Amazon ElastiCache</a> with cross-region replication"
       }
     ],
     "correctKey": "C",
@@ -546,11 +546,11 @@
   {
     "id": "api-gateway-usage-plans-per-customer-throttling",
     "domain": "Application Integration",
-    "scenario": "A SaaS company exposes a public API through Amazon API Gateway to external customers on different subscription tiers. They need to limit each customer to a specific request rate based on their tier, and identify which customer is calling for billing purposes, without requiring customers to share a network location with the provider. What should they implement?",
+    "scenario": "A SaaS company exposes a public API through <a href=\"#\" data-card-link=\"Amazon API Gateway\">Amazon API Gateway</a> to external customers on different subscription tiers. They need to limit each customer to a specific request rate based on their tier, and identify which customer is calling for billing purposes, without requiring customers to share a network location with the provider. What should they implement?",
     "options": [
       {
         "key": "A",
-        "text": "A single AWS WAF rate-based rule limiting all traffic to the API globally."
+        "text": "A single <a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> rate-based rule limiting all traffic to the API globally."
       },
       {
         "key": "B",
@@ -558,11 +558,11 @@
       },
       {
         "key": "C",
-        "text": "API Gateway usage plans, each associated with per-customer API keys."
+        "text": "<a href=\"#\" data-card-link=\"API Gateway: usage plans, API keys, and throttling\">API Gateway usage plans</a>, each associated with per-customer API keys."
       },
       {
         "key": "D",
-        "text": "Route each customer's traffic through a separate Network Load Balancer with connection limits."
+        "text": "Route each customer's traffic through a separate <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Network Load Balancer</a> with connection limits."
       }
     ],
     "correctKey": "C",
@@ -582,11 +582,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Standard workflow"
+        "text": "<a href=\"#\" data-card-link=\"Step Functions: Standard vs. Express workflows\">Standard workflow</a>"
       },
       {
         "key": "B",
-        "text": "Express workflow"
+        "text": "<a href=\"#\" data-card-link=\"Step Functions: Standard vs. Express workflows\">Express workflow</a>"
       },
       {
         "key": "C",
@@ -594,7 +594,7 @@
       },
       {
         "key": "D",
-        "text": "Standard workflow with a shorter execution timeout configured"
+        "text": "<a href=\"#\" data-card-link=\"Step Functions: Standard vs. Express workflows\">Standard workflow</a> with a shorter execution timeout configured"
       }
     ],
     "correctKey": "B",
@@ -626,7 +626,7 @@
       },
       {
         "key": "D",
-        "text": "An AWS WAF geo-blocking rule"
+        "text": "An <a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> geo-blocking rule"
       }
     ],
     "correctKey": "B",
@@ -646,19 +646,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Spread placement group"
+        "text": "<a href=\"#\" data-card-link=\"EC2 Placement Groups\">Spread placement group</a>"
       },
       {
         "key": "B",
-        "text": "Partition placement group"
+        "text": "<a href=\"#\" data-card-link=\"EC2 Placement Groups\">Partition placement group</a>"
       },
       {
         "key": "C",
-        "text": "Cluster placement group"
+        "text": "<a href=\"#\" data-card-link=\"EC2 Placement Groups\">Cluster placement group</a>"
       },
       {
         "key": "D",
-        "text": "No placement group; rely on Auto Scaling across multiple Availability Zones"
+        "text": "No <a href=\"#\" data-card-link=\"EC2 Placement Groups\">placement group</a>; rely on <a href=\"#\" data-card-link=\"Amazon EC2 Auto Scaling\">Auto Scaling across multiple Availability Zones</a>"
       }
     ],
     "correctKey": "C",
@@ -678,19 +678,19 @@
     "options": [
       {
         "key": "A",
-        "text": "A NAT Gateway in a public subnet, with a route from the private subnet"
+        "text": "A <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a> in a public subnet, with a route from the private subnet"
       },
       {
         "key": "B",
-        "text": "An Interface VPC endpoint for S3"
+        "text": "An <a href=\"#\" data-card-link=\"VPC Endpoints: Gateway vs. Interface — what's the difference?\">Interface VPC endpoint</a> for S3"
       },
       {
         "key": "C",
-        "text": "A Gateway VPC endpoint for S3"
+        "text": "A <a href=\"#\" data-card-link=\"VPC Endpoints: Gateway vs. Interface — what's the difference?\">Gateway VPC endpoint</a> for S3"
       },
       {
         "key": "D",
-        "text": "An AWS PrivateLink connection to a partner service"
+        "text": "An <a href=\"#\" data-card-link=\"AWS PrivateLink\">AWS PrivateLink</a> connection to a partner service"
       }
     ],
     "correctKey": "C",
@@ -706,7 +706,7 @@
   {
     "id": "well-architected-cost-pillar-unused-commitments",
     "domain": "Cost Optimization",
-    "scenario": "During a Well-Architected Framework review, a team finds that a stable, predictable production workload has run on On-Demand EC2 pricing for two years with no Reserved Instances or Savings Plans in place, despite consistent, unchanging usage — resulting in significantly higher spend than necessary with no corresponding benefit. Which pillar does this finding primarily relate to?",
+    "scenario": "During a <a href=\"#\" data-card-link=\"AWS Well-Architected Framework: the 6 pillars\">Well-Architected Framework</a> review, a team finds that a stable, predictable production workload has run on <a href=\"#\" data-card-link=\"What are the EC2 purchasing options?\">On-Demand EC2 pricing</a> for two years with no <a href=\"#\" data-card-link=\"Savings Plans vs. Reserved Instances — what's the key difference?\">Reserved Instances</a> or <a href=\"#\" data-card-link=\"Savings Plans\">Savings Plans</a> in place, despite consistent, unchanging usage — resulting in significantly higher spend than necessary with no corresponding benefit. Which pillar does this finding primarily relate to?",
     "options": [
       {
         "key": "A",
@@ -742,19 +742,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Budgets"
+        "text": "<a href=\"#\" data-card-link=\"AWS Budgets\">AWS Budgets</a>"
       },
       {
         "key": "B",
-        "text": "AWS Cost Explorer"
+        "text": "<a href=\"#\" data-card-link=\"AWS Cost Explorer\">AWS Cost Explorer</a>"
       },
       {
         "key": "C",
-        "text": "AWS Cost Anomaly Detection"
+        "text": "<a href=\"#\" data-card-link=\"AWS Cost Anomaly Detection\">AWS Cost Anomaly Detection</a>"
       },
       {
         "key": "D",
-        "text": "AWS Cost and Usage Report (CUR)"
+        "text": "<a href=\"#\" data-card-link=\"AWS Cost and Usage Report (CUR)\">AWS Cost and Usage Report (CUR)</a>"
       }
     ],
     "correctKey": "C",
@@ -770,11 +770,11 @@
   {
     "id": "savings-plan-org-sharing-opt-out",
     "domain": "Cost Optimization",
-    "scenario": "A company's finance team purchased a large Compute Savings Plan in the Organization's management account expecting it to reduce costs across all member accounts. Two months later they notice one specific member account's EC2 costs remain at full On-Demand rates while every other account shows the expected discount. What is the most likely explanation?",
+    "scenario": "A company's finance team purchased a large <a href=\"#\" data-card-link=\"Savings Plans\">Compute Savings Plan</a> in the Organization's management account expecting it to reduce costs across all member accounts. Two months later they notice one specific member account's EC2 costs remain at full On-Demand rates while every other account shows the expected discount. What is the most likely explanation?",
     "options": [
       {
         "key": "A",
-        "text": "Savings Plans can only ever apply to the account that purchased them, and the finance team misunderstood how they work."
+        "text": "<a href=\"#\" data-card-link=\"Savings Plans\">Savings Plans</a> can only ever apply to the account that purchased them, and the finance team misunderstood how they work."
       },
       {
         "key": "B",
@@ -782,7 +782,7 @@
       },
       {
         "key": "C",
-        "text": "Compute Savings Plans do not apply to EC2 usage at all, only to Fargate and Lambda."
+        "text": "<a href=\"#\" data-card-link=\"Savings Plans\">Compute Savings Plan</a>s do not apply to EC2 usage at all, only to Fargate and Lambda."
       },
       {
         "key": "D",
@@ -802,19 +802,19 @@
   {
     "id": "config-conformance-packs-auto-remediation",
     "domain": "Governance & Compliance",
-    "scenario": "A company has deployed AWS Config rules individually across each of its 30 AWS accounts to check for a specific compliance standard. Keeping the rules consistent as the standard evolves has become a significant manual burden, and when a non-compliant resource is found, an engineer must manually intervene to fix it every time. What should a solutions architect recommend to reduce this operational burden?",
+    "scenario": "A company has deployed <a href=\"#\" data-card-link=\"AWS Config\">AWS Config rules</a> individually across each of its 30 AWS accounts to check for a specific compliance standard. Keeping the rules consistent as the standard evolves has become a significant manual burden, and when a non-compliant resource is found, an engineer must manually intervene to fix it every time. What should a solutions architect recommend to reduce this operational burden?",
     "options": [
       {
         "key": "A",
-        "text": "Migrate all Config rules to Amazon EventBridge rules instead."
+        "text": "Migrate all Config rules to <a href=\"#\" data-card-link=\"Amazon EventBridge\">Amazon EventBridge</a> rules instead."
       },
       {
         "key": "B",
-        "text": "Package the Config rules into a conformance pack deployed across the Organization, with SSM Automation documents attached for auto-remediation."
+        "text": "Package the Config rules into a <a href=\"#\" data-card-link=\"AWS Config: conformance packs and auto-remediation\">conformance pack</a> deployed across the Organization, with <a href=\"#\" data-card-link=\"AWS Config: conformance packs and auto-remediation\">SSM Automation documents</a> attached for auto-remediation."
       },
       {
         "key": "C",
-        "text": "Replace AWS Config entirely with a third-party compliance scanning tool."
+        "text": "Replace <a href=\"#\" data-card-link=\"AWS Config\">AWS Config</a> entirely with a third-party compliance scanning tool."
       },
       {
         "key": "D",
@@ -838,19 +838,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Multi-factor authentication (MFA) on all administrator accounts."
+        "text": "<a href=\"#\" data-card-link=\"Multi-Factor Authentication (MFA)\">Multi-factor authentication (MFA)</a> on all administrator accounts."
       },
       {
         "key": "B",
-        "text": "AWS Backup Vault Lock in compliance mode."
+        "text": "<a href=\"#\" data-card-link=\"AWS Backup: Vault Lock\">AWS Backup Vault Lock</a> in <a href=\"#\" data-card-link=\"AWS Backup: Vault Lock\">compliance mode</a>."
       },
       {
         "key": "C",
-        "text": "AWS Backup Vault Lock in governance mode."
+        "text": "<a href=\"#\" data-card-link=\"AWS Backup: Vault Lock\">AWS Backup Vault Lock</a> in <a href=\"#\" data-card-link=\"AWS Backup: Vault Lock\">governance mode</a>."
       },
       {
         "key": "D",
-        "text": "A service control policy (SCP) denying backup:DeleteRecoveryPoint for all users."
+        "text": "A <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">service control policy (SCP)</a> denying backup:DeleteRecoveryPoint for all users."
       }
     ],
     "correctKey": "B",
@@ -870,19 +870,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Trusted Advisor"
+        "text": "<a href=\"#\" data-card-link=\"AWS Trusted Advisor\">AWS Trusted Advisor</a>"
       },
       {
         "key": "B",
-        "text": "AWS Compute Optimizer"
+        "text": "<a href=\"#\" data-card-link=\"AWS Compute Optimizer\">AWS Compute Optimizer</a>"
       },
       {
         "key": "C",
-        "text": "Amazon CloudWatch dashboards"
+        "text": "<a href=\"#\" data-card-link=\"Amazon CloudWatch\">Amazon CloudWatch dashboards</a>"
       },
       {
         "key": "D",
-        "text": "AWS Config"
+        "text": "<a href=\"#\" data-card-link=\"AWS Config\">AWS Config</a>"
       }
     ],
     "correctKey": "B",
@@ -898,23 +898,23 @@
   {
     "id": "xray-microservices-latency-bottleneck",
     "domain": "Operational Excellence",
-    "scenario": "A company's microservices application — composed of API Gateway, several Lambda functions, and a downstream DynamoDB table — has recently started experiencing intermittent high latency for end users, but the team cannot determine which specific service in the request chain is responsible. Which service should they use to pinpoint the bottleneck?",
+    "scenario": "A company's microservices application — composed of <a href=\"#\" data-card-link=\"Amazon API Gateway\">API Gateway</a>, several Lambda functions, and a downstream DynamoDB table — has recently started experiencing intermittent high latency for end users, but the team cannot determine which specific service in the request chain is responsible. Which service should they use to pinpoint the bottleneck?",
     "options": [
       {
         "key": "A",
-        "text": "Amazon CloudWatch Logs Insights"
+        "text": "<a href=\"#\" data-card-link=\"Amazon CloudWatch Logs\">Amazon CloudWatch Logs Insights</a>"
       },
       {
         "key": "B",
-        "text": "AWS X-Ray"
+        "text": "<a href=\"#\" data-card-link=\"AWS X-Ray\">AWS X-Ray</a>"
       },
       {
         "key": "C",
-        "text": "Amazon CloudWatch Alarms"
+        "text": "<a href=\"#\" data-card-link=\"Amazon CloudWatch\">Amazon CloudWatch Alarms</a>"
       },
       {
         "key": "D",
-        "text": "AWS CloudTrail"
+        "text": "<a href=\"#\" data-card-link=\"AWS CloudTrail\">AWS CloudTrail</a>"
       }
     ],
     "correctKey": "B",
@@ -930,23 +930,23 @@
   {
     "id": "migration-6rs-repurchase-saas",
     "domain": "Migration Strategy",
-    "scenario": "A company runs a 15-year-old on-premises inventory management application built on a discontinued vendor platform that is no longer actively maintained or supported. An equivalent, fully-featured cloud-based SaaS inventory management product already exists on the market, meeting all current requirements at a lower total cost than maintaining or re-architecting the legacy application. Which of the 6 R's migration strategies best fits this situation?",
+    "scenario": "A company runs a 15-year-old on-premises inventory management application built on a discontinued vendor platform that is no longer actively maintained or supported. An equivalent, fully-featured cloud-based SaaS inventory management product already exists on the market, meeting all current requirements at a lower total cost than maintaining or re-architecting the legacy application. Which of the <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">6 R's migration strategies</a> best fits this situation?",
     "options": [
       {
         "key": "A",
-        "text": "Rehost"
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Rehost</a>"
       },
       {
         "key": "B",
-        "text": "Replatform"
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Replatform</a>"
       },
       {
         "key": "C",
-        "text": "Repurchase"
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Repurchase</a>"
       },
       {
         "key": "D",
-        "text": "Refactor"
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Refactor</a>"
       }
     ],
     "correctKey": "C",
@@ -962,19 +962,19 @@
   {
     "id": "dms-sct-heterogeneous-oracle-aurora",
     "domain": "Migration Strategy",
-    "scenario": "A company needs to migrate its production database from on-premises Oracle to Amazon Aurora PostgreSQL, including all custom stored procedures and triggers, with minimal application downtime during cutover. What should they use?",
+    "scenario": "A company needs to migrate its production database from on-premises Oracle to <a href=\"#\" data-card-link=\"Amazon Aurora\">Amazon Aurora</a> PostgreSQL, including all custom stored procedures and triggers, with minimal application downtime during cutover. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "AWS DMS alone, to migrate schema, code, and data all in one step."
+        "text": "<a href=\"#\" data-card-link=\"AWS DMS\">AWS DMS</a> alone, to migrate schema, code, and data all in one step."
       },
       {
         "key": "B",
-        "text": "AWS SCT to convert schema and code first, then AWS DMS to perform ongoing data replication and final cutover."
+        "text": "<a href=\"#\" data-card-link=\"AWS SCT (Schema Conversion Tool)\">AWS SCT</a> to convert schema and code first, then <a href=\"#\" data-card-link=\"AWS DMS\">AWS DMS</a> to perform ongoing data replication and final cutover."
       },
       {
         "key": "C",
-        "text": "AWS DataSync to copy the database files directly to Aurora."
+        "text": "<a href=\"#\" data-card-link=\"AWS DataSync\">AWS DataSync</a> to copy the database files directly to Aurora."
       },
       {
         "key": "D",
@@ -994,7 +994,7 @@
   {
     "id": "fargate-spot-batch-cost-optimization",
     "domain": "Cost Optimization",
-    "scenario": "A media company runs a containerized video transcoding batch job on Amazon ECS with AWS Fargate, processing a queue of videos throughout the day. Individual transcoding jobs can safely restart from the beginning if interrupted, and the company wants to reduce compute costs for this workload as much as possible without changing container images or application code. What should they do?",
+    "scenario": "A media company runs a containerized video transcoding batch job on <a href=\"#\" data-card-link=\"Amazon ECS\">Amazon ECS</a> with <a href=\"#\" data-card-link=\"AWS Fargate\">AWS Fargate</a>, processing a queue of videos throughout the day. Individual transcoding jobs can safely restart from the beginning if interrupted, and the company wants to reduce compute costs for this workload as much as possible without changing container images or application code. What should they do?",
     "options": [
       {
         "key": "A",
@@ -1002,15 +1002,15 @@
       },
       {
         "key": "B",
-        "text": "Configure the ECS service to use a Fargate Spot capacity provider strategy alongside standard Fargate."
+        "text": "Configure the ECS service to use a <a href=\"#\" data-card-link=\"ECS/EKS: Fargate Spot and Capacity Providers\">Fargate Spot capacity provider</a> strategy alongside standard Fargate."
       },
       {
         "key": "C",
-        "text": "Move the workload to AWS Lambda instead."
+        "text": "Move the workload to <a href=\"#\" data-card-link=\"AWS Lambda\">AWS Lambda</a> instead."
       },
       {
         "key": "D",
-        "text": "Purchase a Compute Savings Plan committing to 3 years of steady Fargate usage."
+        "text": "Purchase a <a href=\"#\" data-card-link=\"Savings Plans\">Compute Savings Plan</a> committing to 3 years of steady Fargate usage."
       }
     ],
     "correctKey": "B",
@@ -1026,23 +1026,23 @@
   {
     "id": "snow-family-petabyte-migration-bandwidth",
     "domain": "Migration Strategy",
-    "scenario": "A research institution needs to migrate 2 petabytes of existing data from an on-premises data center to Amazon S3. Their available internet connection provides 100 Mbps of usable bandwidth, and calculations show that transferring the full dataset over this connection would take several months. What should they use instead?",
+    "scenario": "A research institution needs to migrate 2 petabytes of existing data from an on-premises data center to <a href=\"#\" data-card-link=\"Amazon S3\">Amazon S3</a>. Their available internet connection provides 100 Mbps of usable bandwidth, and calculations show that transferring the full dataset over this connection would take several months. What should they use instead?",
     "options": [
       {
         "key": "A",
-        "text": "AWS DataSync over the existing internet connection."
+        "text": "<a href=\"#\" data-card-link=\"AWS DataSync\">AWS DataSync</a> over the existing internet connection."
       },
       {
         "key": "B",
-        "text": "AWS Snowball Edge devices (or AWS Snowmobile, depending on final data volume assessment)."
+        "text": "<a href=\"#\" data-card-link=\"AWS Snow Family\">AWS Snowball Edge</a> devices (or <a href=\"#\" data-card-link=\"AWS Snow Family\">AWS Snowmobile</a>, depending on final data volume assessment)."
       },
       {
         "key": "C",
-        "text": "Amazon S3 Transfer Acceleration."
+        "text": "<a href=\"#\" data-card-link=\"Amazon S3 Transfer Acceleration\">Amazon S3 Transfer Acceleration</a>."
       },
       {
         "key": "D",
-        "text": "AWS Direct Connect with a new 1 Gbps dedicated connection."
+        "text": "<a href=\"#\" data-card-link=\"AWS Direct Connect\">AWS Direct Connect</a> with a new 1 Gbps dedicated connection."
       }
     ],
     "correctKey": "B",
@@ -1062,15 +1062,15 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS OpsWorks"
+        "text": "<a href=\"#\" data-card-link=\"AWS OpsWorks\">AWS OpsWorks</a>"
       },
       {
         "key": "B",
-        "text": "AWS CDK"
+        "text": "<a href=\"#\" data-card-link=\"AWS CDK (Cloud Development Kit)\">AWS CDK</a>"
       },
       {
         "key": "C",
-        "text": "AWS Elastic Beanstalk"
+        "text": "<a href=\"#\" data-card-link=\"AWS Elastic Beanstalk\">AWS Elastic Beanstalk</a>"
       },
       {
         "key": "D",
@@ -1094,19 +1094,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon RDS for MySQL with cross-region read replicas"
+        "text": "<a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for MySQL</a> with cross-region read replicas"
       },
       {
         "key": "B",
-        "text": "Amazon Aurora MySQL-Compatible Global Database"
+        "text": "<a href=\"#\" data-card-link=\"What does Aurora Global Database provide?\">Amazon Aurora MySQL-Compatible Global Database</a>"
       },
       {
         "key": "C",
-        "text": "Amazon DynamoDB Global Tables, redesigning the schema from relational to NoSQL"
+        "text": "<a href=\"#\" data-card-link=\"Amazon DynamoDB\">Amazon DynamoDB Global Tables</a>, redesigning the schema from relational to NoSQL"
       },
       {
         "key": "D",
-        "text": "An Aurora MySQL Multi-AZ cluster, with ongoing replication to other Regions handled by AWS DMS replication tasks"
+        "text": "An <a href=\"#\" data-card-link=\"Amazon Aurora\">Aurora MySQL Multi-AZ cluster</a>, with ongoing replication to other Regions handled by <a href=\"#\" data-card-link=\"AWS DMS\">AWS DMS replication tasks</a>"
       }
     ],
     "correctKey": "B",
@@ -1126,11 +1126,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Deploy entirely separate CodePipeline instances in each of the three accounts, each independently pulling source and rebuilding from scratch."
+        "text": "Deploy entirely separate <a href=\"#\" data-card-link=\"AWS CodePipeline\">CodePipeline</a> instances in each of the three accounts, each independently pulling source and rebuilding from scratch."
       },
       {
         "key": "B",
-        "text": "Run a single CodePipeline in a central tooling account; use CodeBuild to produce one build artifact stored in S3/ECR, then use cross-account IAM roles via CodePipeline's cross-account action configuration to deploy that same artifact to Test and Prod, with a manual approval action gating the Prod stage."
+        "text": "Run a single <a href=\"#\" data-card-link=\"AWS CodePipeline\">CodePipeline</a> in a central tooling account; use CodeBuild to produce one build artifact stored in S3/ECR, then use cross-account <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>s via CodePipeline's cross-account action configuration to deploy that same artifact to Test and Prod, with a manual approval action gating the Prod stage."
       },
       {
         "key": "C",
@@ -1158,15 +1158,15 @@
     "options": [
       {
         "key": "A",
-        "text": "An SQS Standard queue"
+        "text": "An <a href=\"#\" data-card-link=\"SQS Standard vs. FIFO queues — what's the throughput/ordering tradeoff?\">SQS Standard queue</a>"
       },
       {
         "key": "B",
-        "text": "An SQS FIFO queue"
+        "text": "An <a href=\"#\" data-card-link=\"SQS Standard vs. FIFO queues — what's the throughput/ordering tradeoff?\">SQS FIFO queue</a>"
       },
       {
         "key": "C",
-        "text": "Amazon Kinesis Data Streams, using customer ID as the partition key, with a 24-hour retention period"
+        "text": "<a href=\"#\" data-card-link=\"Amazon Kinesis Data Streams\">Amazon Kinesis Data Streams</a>, using customer ID as the partition key, with a 24-hour retention period"
       },
       {
         "key": "D",
@@ -1190,19 +1190,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon CloudFront"
+        "text": "<a href=\"#\" data-card-link=\"Amazon CloudFront\">Amazon CloudFront</a>"
       },
       {
         "key": "B",
-        "text": "AWS Global Accelerator"
+        "text": "<a href=\"#\" data-card-link=\"AWS Global Accelerator\">AWS Global Accelerator</a>"
       },
       {
         "key": "C",
-        "text": "Amazon Route 53 latency-based routing alone"
+        "text": "Amazon <a href=\"#\" data-card-link=\"Route 53: Latency-based routing policy\">Route 53 latency-based routing</a> alone"
       },
       {
         "key": "D",
-        "text": "An Application Load Balancer with cross-zone load balancing enabled"
+        "text": "An <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Application Load Balancer</a> with cross-zone load balancing enabled"
       }
     ],
     "correctKey": "B",
@@ -1218,7 +1218,7 @@
   {
     "id": "lake-formation-fine-grained-data-lake-permissions",
     "domain": "Analytics & Data Lake",
-    "scenario": "A company is building a new centralized data lake on S3 that will be queried by dozens of analyst teams via Athena and Redshift Spectrum. Each team should only see specific tables, and in some cases only specific columns or rows within a table (for example, finance analysts can see salary columns but no other team can), with access centrally managed and audited in one place rather than through per-team S3 bucket policies. What should a solutions architect recommend?",
+    "scenario": "A company is building a new centralized data lake on S3 that will be queried by dozens of analyst teams via Athena and <a href=\"#\" data-card-link=\"Amazon Redshift\">Redshift Spectrum</a>. Each team should only see specific tables, and in some cases only specific columns or rows within a table (for example, finance analysts can see salary columns but no other team can), with access centrally managed and audited in one place rather than through per-team S3 bucket policies. What should a solutions architect recommend?",
     "options": [
       {
         "key": "A",
@@ -1226,7 +1226,7 @@
       },
       {
         "key": "B",
-        "text": "Use AWS Lake Formation to centrally define and enforce table-, column-, and row-level permissions across all teams querying the shared data lake."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Lake Formation\">AWS Lake Formation</a> to centrally define and enforce table-, column-, and row-level permissions across all teams querying the shared data lake."
       },
       {
         "key": "C",
@@ -1234,7 +1234,7 @@
       },
       {
         "key": "D",
-        "text": "Rely solely on IAM policies applied directly to the underlying S3 objects, with a separate policy per team per table."
+        "text": "Rely solely on <a href=\"#\" data-card-link=\"AWS IAM\">IAM policies</a> applied directly to the underlying S3 objects, with a separate policy per team per table."
       }
     ],
     "correctKey": "B",
@@ -1254,19 +1254,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon EFS"
+        "text": "<a href=\"#\" data-card-link=\"Amazon EFS\">Amazon EFS</a>"
       },
       {
         "key": "B",
-        "text": "Amazon FSx for Windows File Server"
+        "text": "<a href=\"#\" data-card-link=\"Amazon FSx\">Amazon FSx for Windows File Server</a>"
       },
       {
         "key": "C",
-        "text": "Amazon FSx for Lustre"
+        "text": "<a href=\"#\" data-card-link=\"Amazon FSx\">Amazon FSx for Lustre</a>"
       },
       {
         "key": "D",
-        "text": "An Amazon EBS Multi-Attach volume shared across all instances"
+        "text": "An <a href=\"#\" data-card-link=\"Amazon EBS\">Amazon EBS Multi-Attach</a> volume shared across all instances"
       }
     ],
     "correctKey": "C",
@@ -1286,7 +1286,7 @@
     "options": [
       {
         "key": "A",
-        "text": "Migrate the database to Amazon Aurora with a Global Database configuration spanning three Regions."
+        "text": "Migrate the database to <a href=\"#\" data-card-link=\"Amazon Aurora\">Amazon Aurora</a> with a Global Database configuration spanning three Regions."
       },
       {
         "key": "B",
@@ -1314,7 +1314,7 @@
   {
     "id": "guardduty-security-hub-automated-remediation",
     "domain": "Security & Compliance",
-    "scenario": "A company has had Amazon GuardDuty enabled across all accounts in its Organization for over a year, but security engineers can no longer keep up manually reviewing the growing volume of findings across dozens of accounts, and low-severity findings that indicate common, well-understood issues — like a publicly exposed S3 bucket — often sit unaddressed for days. The company wants a centralized view of findings across all accounts, automatic remediation for well-understood, low-risk finding types, and still wants a human to review higher-severity findings. What should they implement?",
+    "scenario": "A company has had <a href=\"#\" data-card-link=\"Amazon GuardDuty\">Amazon GuardDuty</a> enabled across all accounts in its Organization for over a year, but security engineers can no longer keep up manually reviewing the growing volume of findings across dozens of accounts, and low-severity findings that indicate common, well-understood issues — like a publicly exposed S3 bucket — often sit unaddressed for days. The company wants a centralized view of findings across all accounts, automatic remediation for well-understood, low-risk finding types, and still wants a human to review higher-severity findings. What should they implement?",
     "options": [
       {
         "key": "A",
@@ -1322,7 +1322,7 @@
       },
       {
         "key": "B",
-        "text": "Aggregate findings from GuardDuty and other security services into AWS Security Hub across the Organization, and use EventBridge rules matching specific low-severity finding types to trigger automated remediation, while routing higher-severity findings to a human review queue."
+        "text": "Aggregate findings from GuardDuty and other security services into <a href=\"#\" data-card-link=\"AWS Security Hub\">AWS Security Hub</a> across the Organization, and use EventBridge rules matching specific low-severity finding types to trigger automated remediation, while routing higher-severity findings to a human review queue."
       },
       {
         "key": "C",
@@ -1330,7 +1330,7 @@
       },
       {
         "key": "D",
-        "text": "Replace GuardDuty with AWS Config rules that check for the same misconfigurations GuardDuty already detects."
+        "text": "Replace GuardDuty with <a href=\"#\" data-card-link=\"AWS Config\">AWS Config rules</a> that check for the same misconfigurations GuardDuty already detects."
       }
     ],
     "correctKey": "B",
@@ -1354,11 +1354,11 @@
       },
       {
         "key": "B",
-        "text": "Introduce Amazon ElastiCache in front of the database to cache query results."
+        "text": "Introduce <a href=\"#\" data-card-link=\"Amazon ElastiCache\">Amazon ElastiCache</a> in front of the database to cache query results."
       },
       {
         "key": "C",
-        "text": "Introduce Amazon RDS Proxy between the Lambda functions and the database to pool and share connections."
+        "text": "Introduce <a href=\"#\" data-card-link=\"Amazon RDS Proxy\">Amazon RDS Proxy</a> between the Lambda functions and the database to pool and share connections."
       },
       {
         "key": "D",
@@ -1382,11 +1382,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Immediately begin migrating servers in alphabetical order using AWS Application Migration Service (MGN), addressing dependencies as issues arise."
+        "text": "Immediately begin migrating servers in alphabetical order using <a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a>, addressing dependencies as issues arise."
       },
       {
         "key": "B",
-        "text": "Deploy AWS Application Discovery Service (agent-based or agentless) to collect server inventory, utilization, and network dependency data, and track migration wave planning centrally in AWS Migration Hub."
+        "text": "Deploy <a href=\"#\" data-card-link=\"AWS Application Discovery Service\">AWS Application Discovery Service</a> (agent-based or agentless) to collect server inventory, utilization, and network dependency data, and track migration wave planning centrally in <a href=\"#\" data-card-link=\"AWS Migration Hub\">AWS Migration Hub</a>."
       },
       {
         "key": "C",
@@ -1414,19 +1414,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Database Migration Service (DMS)"
+        "text": "<a href=\"#\" data-card-link=\"AWS DMS\">AWS Database Migration Service (DMS)</a>"
       },
       {
         "key": "B",
-        "text": "AWS Application Migration Service (MGN)"
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a>"
       },
       {
         "key": "C",
-        "text": "AWS Server Migration Service (SMS), the deprecated predecessor service"
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Server Migration Service (SMS)</a>, the deprecated predecessor service"
       },
       {
         "key": "D",
-        "text": "AWS DataSync"
+        "text": "<a href=\"#\" data-card-link=\"AWS DataSync\">AWS DataSync</a>"
       }
     ],
     "correctKey": "B",
@@ -1446,11 +1446,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Rehost the entire monolith as-is on EC2 using AWS MGN, then decide on a modernization approach afterward."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Rehost</a> the entire monolith as-is on EC2 using AWS MGN, then decide on a modernization approach afterward."
       },
       {
         "key": "B",
-        "text": "Use the Strangler Fig pattern: place Amazon API Gateway (or an ALB) in front of both the monolith and new microservices, incrementally routing specific paths or endpoints to new microservices as they're built, until the monolith is fully replaced."
+        "text": "Use the <a href=\"#\" data-card-link=\"Strangler Fig Pattern\">Strangler Fig pattern</a>: place <a href=\"#\" data-card-link=\"Amazon API Gateway\">Amazon API Gateway</a> (or an ALB) in front of both the monolith and new microservices, incrementally routing specific paths or endpoints to new microservices as they're built, until the monolith is fully replaced."
       },
       {
         "key": "C",
@@ -1458,7 +1458,7 @@
       },
       {
         "key": "D",
-        "text": "Use AWS Application Discovery Service to catalog the monolith's internal functions before making any architectural changes."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Application Discovery Service\">AWS Application Discovery Service</a> to catalog the monolith's internal functions before making any architectural changes."
       }
     ],
     "correctKey": "B",
@@ -1474,23 +1474,23 @@
   {
     "id": "datasync-vs-storage-gateway-onetime-vs-ongoing",
     "domain": "Migration Strategy",
-    "scenario": "A company has two separate needs: (1) a one-time transfer of 500 TB of existing files from an on-premises NFS file server to Amazon S3 as part of a data center exit, after which the on-premises server will be decommissioned, and (2) for a separate, ongoing application that must remain on-premises indefinitely, low-latency local access to a working set of files while transparently and asynchronously backing all of that data up to S3 in the background. Which combination of services fits both needs respectively?",
+    "scenario": "A company has two separate needs: (1) a one-time transfer of 500 TB of existing files from an on-premises NFS file server to <a href=\"#\" data-card-link=\"Amazon S3\">Amazon S3</a> as part of a data center exit, after which the on-premises server will be decommissioned, and (2) for a separate, ongoing application that must remain on-premises indefinitely, low-latency local access to a working set of files while transparently and asynchronously backing all of that data up to S3 in the background. Which combination of services fits both needs respectively?",
     "options": [
       {
         "key": "A",
-        "text": "Use AWS DataSync for both needs."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS DataSync\">AWS DataSync</a> for both needs."
       },
       {
         "key": "B",
-        "text": "Use AWS DataSync for the one-time transfer (1), and AWS Storage Gateway (File Gateway) for the ongoing on-premises application (2)."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS DataSync\">AWS DataSync</a> for the one-time transfer (1), and <a href=\"#\" data-card-link=\"AWS Storage Gateway\">AWS Storage Gateway (File Gateway)</a> for the ongoing on-premises application (2)."
       },
       {
         "key": "C",
-        "text": "Use AWS Storage Gateway for both needs."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Storage Gateway\">AWS Storage Gateway</a> for both needs."
       },
       {
         "key": "D",
-        "text": "Use AWS Snowball Edge for both needs."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Snow Family\">AWS Snowball Edge</a> for both needs."
       }
     ],
     "correctKey": "B",
@@ -1506,23 +1506,23 @@
   {
     "id": "app2container-dotnet-monolith-containerization",
     "domain": "Modernization",
-    "scenario": "A company wants to modernize a legacy on-premises .NET monolithic application by moving it into containers to run on Amazon ECS, but the development team is fully occupied with other priorities and cannot spend time manually rewriting Dockerfiles or restructuring the application. They need a tool that can analyze the existing running application and automatically generate the container image and ECS task definition. What should they use?",
+    "scenario": "A company wants to modernize a legacy on-premises .NET monolithic application by moving it into containers to run on <a href=\"#\" data-card-link=\"Amazon ECS\">Amazon ECS</a>, but the development team is fully occupied with other priorities and cannot spend time manually rewriting Dockerfiles or restructuring the application. They need a tool that can analyze the existing running application and automatically generate the container image and ECS task definition. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "AWS Application Migration Service (MGN)"
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a>"
       },
       {
         "key": "B",
-        "text": "AWS App2Container"
+        "text": "<a href=\"#\" data-card-link=\"AWS App2Container\">AWS App2Container</a>"
       },
       {
         "key": "C",
-        "text": "AWS Fargate directly, without any additional tooling"
+        "text": "<a href=\"#\" data-card-link=\"AWS Fargate\">AWS Fargate</a> directly, without any additional tooling"
       },
       {
         "key": "D",
-        "text": "AWS Elastic Beanstalk"
+        "text": "<a href=\"#\" data-card-link=\"AWS Elastic Beanstalk\">AWS Elastic Beanstalk</a>"
       }
     ],
     "correctKey": "B",
@@ -1542,19 +1542,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Use AWS SCT and DMS to convert the SQL Server database to Amazon Aurora PostgreSQL before the deadline."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS SCT (Schema Conversion Tool)\">AWS SCT</a> and DMS to convert the SQL Server database to <a href=\"#\" data-card-link=\"Amazon Aurora\">Amazon Aurora</a> PostgreSQL before the deadline."
       },
       {
         "key": "B",
-        "text": "Use AWS Application Migration Service (MGN) to rehost both the application server and the SQL Server database as-is on EC2, deferring any database replatforming to after the deadline."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a> to rehost both the application server and the SQL Server database as-is on EC2, deferring any database replatforming to after the deadline."
       },
       {
         "key": "C",
-        "text": "Rewrite the application to use Amazon DynamoDB instead of a relational database."
+        "text": "Rewrite the application to use <a href=\"#\" data-card-link=\"Amazon DynamoDB\">Amazon DynamoDB</a> instead of a relational database."
       },
       {
         "key": "D",
-        "text": "Migrate only the application server via MGN, and manually re-create the SQL Server schema and stored procedures by hand on Amazon RDS for SQL Server before the deadline."
+        "text": "Migrate only the application server via MGN, and manually re-create the SQL Server schema and stored procedures by hand on <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for SQL Server</a> before the deadline."
       }
     ],
     "correctKey": "B",
@@ -1574,15 +1574,15 @@
     "options": [
       {
         "key": "A",
-        "text": "Use VMware Cloud on AWS to migrate the existing VMware environment as-is onto AWS-hosted infrastructure, preserving existing VMware tools, skills, and configurations, then modernize individual applications afterward at their own pace."
+        "text": "Use <a href=\"#\" data-card-link=\"VMware Cloud on AWS\">VMware Cloud on AWS</a> to migrate the existing VMware environment as-is onto AWS-hosted infrastructure, preserving existing VMware tools, skills, and configurations, then modernize individual applications afterward at their own pace."
       },
       {
         "key": "B",
-        "text": "Use AWS Application Migration Service (MGN) to rehost each VM individually as a native EC2 instance, reconfiguring networking and storage to native AWS equivalents for every application before the deadline."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a> to rehost each VM individually as a native EC2 instance, reconfiguring networking and storage to native AWS equivalents for every application before the deadline."
       },
       {
         "key": "C",
-        "text": "Refactor every application to use native AWS services (ECS, RDS, native VPC networking) before the deadline to avoid any dependency on VMware technology going forward."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Refactor</a> every application to use native AWS services (ECS, RDS, native VPC networking) before the deadline to avoid any dependency on VMware technology going forward."
       },
       {
         "key": "D",
@@ -1602,23 +1602,23 @@
   {
     "id": "ram-share-transit-gateway-org-wide",
     "domain": "Networking & Connectivity",
-    "scenario": "A platform team manages a central Transit Gateway in a Network account, and wants every one of 60 application accounts across the Organization to attach their own VPCs to it, without the Network team needing to manually accept each attachment request or grant broad cross-account permissions. What should they use?",
+    "scenario": "A platform team manages a central <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> in a Network account, and wants every one of 60 application accounts across the Organization to attach their own VPCs to it, without the Network team needing to manually accept each attachment request or grant broad cross-account permissions. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Manually share the Transit Gateway ID with each account team and have them submit attachment requests for manual approval."
+        "text": "Manually share the <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> ID with each account team and have them submit attachment requests for manual approval."
       },
       {
         "key": "B",
-        "text": "Use AWS Resource Access Manager (RAM) to share the Transit Gateway with the entire Organization (or specific OUs), enabling automatic attachment acceptance for accounts within the Organization."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Resource Access Manager (RAM)\">AWS Resource Access Manager (RAM)</a> to share the <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> with the entire Organization (or specific OUs), enabling automatic attachment acceptance for accounts within the Organization."
       },
       {
         "key": "C",
-        "text": "Create a separate Transit Gateway per application account and peer them all together."
+        "text": "Create a separate <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> per application account and peer them all together."
       },
       {
         "key": "D",
-        "text": "Grant each application account's IAM users AdministratorAccess in the Network account so they can create their own attachments directly."
+        "text": "Grant each application account's <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a>s AdministratorAccess in the Network account so they can create their own attachments directly."
       }
     ],
     "correctKey": "B",
@@ -1634,23 +1634,23 @@
   {
     "id": "scp-baseline-fullawsaccess-deny-list",
     "domain": "Governance & Compliance",
-    "scenario": "A newly formed cloud governance team wants to apply guardrails across their AWS Organization such that all accounts retain full access to AWS services by default, to avoid breaking existing workloads, while specifically blocking a small, well-defined set of dangerous actions (for example, disabling GuardDuty, or leaving a specific Region). What SCP strategy should they use?",
+    "scenario": "A newly formed cloud governance team wants to apply guardrails across their AWS Organization such that all accounts retain full access to AWS services by default, to avoid breaking existing workloads, while specifically blocking a small, well-defined set of dangerous actions (for example, disabling GuardDuty, or leaving a specific Region). What <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> strategy should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Attach an SCP to every OU that explicitly allows only the specific set of actions each account is known to need today."
+        "text": "Attach an <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> to every OU that explicitly allows only the specific set of actions each account is known to need today."
       },
       {
         "key": "B",
-        "text": "Keep the default FullAWSAccess SCP attached, and additionally attach a deny-list SCP that explicitly denies only the specific dangerous actions identified."
+        "text": "Keep the default FullAWSAccess <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> attached, and additionally attach a deny-list SCP that explicitly denies only the specific dangerous actions identified."
       },
       {
         "key": "C",
-        "text": "Detach the default FullAWSAccess SCP from every OU, since SCPs should always start from zero access."
+        "text": "Detach the default FullAWSAccess <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> from every OU, since <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCPs</a> should always start from zero access."
       },
       {
         "key": "D",
-        "text": "Create a single SCP with an explicit Allow listed individually for every AWS action except the ones to be blocked."
+        "text": "Create a single <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> with an explicit Allow listed individually for every AWS action except the ones to be blocked."
       }
     ],
     "correctKey": "B",
@@ -1666,23 +1666,23 @@
   {
     "id": "iam-identity-center-permission-sets-vs-per-account-users",
     "domain": "Identity & Access Management",
-    "scenario": "A company with 50 AWS accounts under one Organization currently requires each employee to have a separate IAM user, with its own password and access keys, created manually in every account they need access to, causing significant onboarding and offboarding overhead and inconsistent permissions across accounts. The company wants a single place to manage each employee's identity and control what permissions they get in which accounts, ideally integrated with their existing corporate identity provider. What should they implement?",
+    "scenario": "A company with 50 AWS accounts under one Organization currently requires each employee to have a separate <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a>, with its own password and access keys, created manually in every account they need access to, causing significant onboarding and offboarding overhead and inconsistent permissions across accounts. The company wants a single place to manage each employee's identity and control what permissions they get in which accounts, ideally integrated with their existing corporate identity provider. What should they implement?",
     "options": [
       {
         "key": "A",
-        "text": "Continue creating IAM users per account, but automate creation with a script triggered by the HR system."
+        "text": "Continue creating <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a>s per account, but automate creation with a script triggered by the HR system."
       },
       {
         "key": "B",
-        "text": "Use AWS IAM Identity Center, federating with the corporate identity provider, and assign permission sets to users or groups per account, granting temporary role-based access instead of per-account IAM users."
+        "text": "Use AWS <a href=\"#\" data-card-link=\"AWS IAM Identity Center\">IAM Identity Center</a>, federating with the corporate identity provider, and assign permission sets to users or groups per account, granting temporary role-based access instead of per-account <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a>s."
       },
       {
         "key": "C",
-        "text": "Create one IAM user per employee in the Organization's management account, and have employees assume roles cross-account from there using long-lived access keys."
+        "text": "Create one <a href=\"#\" data-card-link=\"AWS IAM\">IAM user</a> per employee in the Organization's management account, and have employees assume roles cross-account from there using long-lived access keys."
       },
       {
         "key": "D",
-        "text": "Use AWS Directory Service to create a Microsoft Active Directory in every account and have employees log in separately to each."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Directory Service\">AWS Directory Service</a> to create a Microsoft <a href=\"#\" data-card-link=\"AWS Directory Service\">Active Directory</a> in every account and have employees log in separately to each."
       }
     ],
     "correctKey": "B",
@@ -1714,7 +1714,7 @@
       },
       {
         "key": "D",
-        "text": "Use AWS Config aggregators to collect a consolidated view of all account activity instead of CloudTrail."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Config\">AWS Config aggregators</a> to collect a consolidated view of all account activity instead of CloudTrail."
       }
     ],
     "correctKey": "B",
@@ -1730,23 +1730,23 @@
   {
     "id": "direct-connect-gateway-multi-region-vif",
     "domain": "Networking & Connectivity",
-    "scenario": "A global enterprise has a single Direct Connect connection established at their headquarters, and needs private, consistent connectivity from that one on-premises location to VPCs in five different AWS Regions across three different AWS accounts, without provisioning a separate physical Direct Connect connection in each Region. What should they use?",
+    "scenario": "A global enterprise has a single <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connection established at their headquarters, and needs private, consistent connectivity from that one on-premises location to VPCs in five different AWS Regions across three different AWS accounts, without provisioning a separate physical Direct Connect connection in each Region. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Provision a new Direct Connect connection and private VIF in each of the five Regions individually."
+        "text": "Provision a new <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connection and private VIF in each of the five Regions individually."
       },
       {
         "key": "B",
-        "text": "Use a Direct Connect Gateway, associating a single private virtual interface from the existing connection with virtual private gateways or transit gateways in each of the five Regions and three accounts."
+        "text": "Use a <a href=\"#\" data-card-link=\"Direct Connect: Public VIF vs. Private VIF vs. Transit VIF\">Direct Connect Gateway</a>, associating a single private virtual interface from the existing connection with virtual private gateways or transit gateways in each of the five Regions and three accounts."
       },
       {
         "key": "C",
-        "text": "Use AWS Site-to-Site VPN as a substitute for Direct Connect in the four Regions without a physical connection."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Site-to-Site VPN\">AWS Site-to-Site VPN</a> as a substitute for <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> in the four Regions without a physical connection."
       },
       {
         "key": "D",
-        "text": "Use VPC peering between the Region containing the Direct Connect connection and the other four Regions."
+        "text": "Use <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a> between the Region containing the <a href=\"#\" data-card-link=\"AWS Direct Connect\">Direct Connect</a> connection and the other four Regions."
       }
     ],
     "correctKey": "B",
@@ -1770,15 +1770,15 @@
       },
       {
         "key": "B",
-        "text": "Use Amazon Route 53 Resolver inbound and outbound endpoints, with forwarding rules directing on-premises-bound queries out to on-premises DNS servers and on-premises-originated queries in to AWS-hosted records."
+        "text": "Use Amazon <a href=\"#\" data-card-link=\"Route 53 Resolver\">Route 53 Resolver</a> inbound and outbound endpoints, with forwarding rules directing on-premises-bound queries out to on-premises DNS servers and on-premises-originated queries in to AWS-hosted records."
       },
       {
         "key": "C",
-        "text": "Manually maintain identical DNS records in both the on-premises DNS servers and a public Route 53 hosted zone."
+        "text": "Manually maintain identical DNS records in both the on-premises DNS servers and a public <a href=\"#\" data-card-link=\"Amazon Route 53\">Route 53</a> hosted zone."
       },
       {
         "key": "D",
-        "text": "Use AWS Direct Connect alone, since it automatically forwards DNS queries bidirectionally."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Direct Connect\">AWS Direct Connect</a> alone, since it automatically forwards DNS queries bidirectionally."
       }
     ],
     "correctKey": "B",
@@ -1802,7 +1802,7 @@
       },
       {
         "key": "B",
-        "text": "Use AWS Organizations tag policies to define the required tag key and allowed values centrally, applied across the Organization, paired with AWS Config rules to detect non-compliant resources."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Organizations: policy types beyond SCPs\">AWS Organizations tag policies</a> to define the required tag key and allowed values centrally, applied across the Organization, paired with <a href=\"#\" data-card-link=\"AWS Config\">AWS Config rules</a> to detect non-compliant resources."
       },
       {
         "key": "C",
@@ -1834,7 +1834,7 @@
       },
       {
         "key": "B",
-        "text": "Create a central Amazon EventBridge event bus in the security account, grant cross-account permissions for member accounts' default event buses to forward matching events to it via EventBridge rules, and have member accounts add a simple forwarding rule."
+        "text": "Create a central <a href=\"#\" data-card-link=\"Amazon EventBridge\">Amazon EventBridge</a> event bus in the security account, grant cross-account permissions for member accounts' default event buses to forward matching events to it via EventBridge rules, and have member accounts add a simple forwarding rule."
       },
       {
         "key": "C",
@@ -1862,19 +1862,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Deploy a third-party firewall appliance fleet behind a Gateway Load Balancer independently in every VPC across every account."
+        "text": "Deploy a third-party firewall appliance fleet behind a <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Gateway Load Balancer</a> independently in every VPC across every account."
       },
       {
         "key": "B",
-        "text": "Deploy AWS Network Firewall in a centralized inspection VPC, and use Transit Gateway to route traffic from every spoke VPC through the inspection VPC before it reaches the internet."
+        "text": "Deploy <a href=\"#\" data-card-link=\"AWS Network Firewall\">AWS Network Firewall</a> in a centralized inspection VPC, and use <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> to route traffic from every spoke VPC through the inspection VPC before it reaches the internet."
       },
       {
         "key": "C",
-        "text": "Enable VPC Flow Logs in every VPC and manually review them for suspicious traffic patterns."
+        "text": "Enable <a href=\"#\" data-card-link=\"VPC Flow Logs\">VPC Flow Logs</a> in every VPC and manually review them for suspicious traffic patterns."
       },
       {
         "key": "D",
-        "text": "Attach an AWS WAF web ACL to every Application Load Balancer in every VPC."
+        "text": "Attach an <a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> web ACL to every <a href=\"#\" data-card-link=\"ALB vs. NLB vs. GWLB — how do you choose?\">Application Load Balancer</a> in every VPC."
       }
     ],
     "correctKey": "B",
@@ -1890,15 +1890,15 @@
   {
     "id": "customizations-for-control-tower-cfct",
     "domain": "Governance & Compliance",
-    "scenario": "A company has AWS Control Tower governing its multi-account landing zone, but needs additional custom guardrails and baseline resources, such as specific custom Config rules, a standard set of VPC endpoints, and a specific IAM role, automatically applied to every new account as it's vended through Account Factory, beyond what Control Tower's built-in guardrails provide. What should they use?",
+    "scenario": "A company has <a href=\"#\" data-card-link=\"AWS Control Tower\">AWS Control Tower</a> governing its multi-account landing zone, but needs additional custom guardrails and baseline resources, such as specific custom Config rules, a standard set of VPC endpoints, and a specific <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>, automatically applied to every new account as it's vended through <a href=\"#\" data-card-link=\"AWS Control Tower\">Account Factory</a>, beyond what Control Tower's built-in guardrails provide. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Manually configure the additional resources in each new account after it's created via Account Factory."
+        "text": "Manually configure the additional resources in each new account after it's created via <a href=\"#\" data-card-link=\"AWS Control Tower\">Account Factory</a>."
       },
       {
         "key": "B",
-        "text": "Use Customizations for AWS Control Tower (CfCT), which layers custom CloudFormation stacks and SCPs on top of every account provisioned through Account Factory, automatically."
+        "text": "Use <a href=\"#\" data-card-link=\"Customizations for AWS Control Tower (CfCT)\">Customizations for AWS Control Tower (CfCT)</a>, which layers custom CloudFormation stacks and <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCPs</a> on top of every account provisioned through <a href=\"#\" data-card-link=\"AWS Control Tower\">Account Factory</a>, automatically."
       },
       {
         "key": "C",
@@ -1926,15 +1926,15 @@
     "options": [
       {
         "key": "A",
-        "text": "Store the secret in AWS Secrets Manager in one account, and copy its value into a second Secrets Manager secret in the other account, updating both whenever it changes."
+        "text": "Store the secret in <a href=\"#\" data-card-link=\"AWS Secrets Manager\">AWS Secrets Manager</a> in one account, and copy its value into a second Secrets Manager secret in the other account, updating both whenever it changes."
       },
       {
         "key": "B",
-        "text": "Store the secret once in AWS Secrets Manager in a central account, and attach a resource-based policy to the secret granting specific IAM roles in the Dev and Prod accounts permission to retrieve it directly via cross-account access."
+        "text": "Store the secret once in <a href=\"#\" data-card-link=\"AWS Secrets Manager\">AWS Secrets Manager</a> in a central account, and attach a <a href=\"#\" data-card-link=\"IAM: Resource-based policies\">resource-based policy</a> to the secret granting specific <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>s in the Dev and Prod accounts permission to retrieve it directly via cross-account access."
       },
       {
         "key": "C",
-        "text": "Store the secret as a plaintext parameter in Systems Manager Parameter Store in each account."
+        "text": "Store the secret as a plaintext parameter in <a href=\"#\" data-card-link=\"Secrets Manager vs. Systems Manager Parameter Store — what's the difference?\">Systems Manager Parameter Store</a> in each account."
       },
       {
         "key": "D",
@@ -1954,23 +1954,23 @@
   {
     "id": "access-analyzer-org-external-access-findings",
     "domain": "Security & Compliance",
-    "scenario": "A security team manages dozens of accounts across an Organization and wants an automated way to continuously identify any S3 bucket, IAM role, KMS key, or other resource that has been granted access to a principal outside the Organization, across every account, without manually auditing each account's policies one by one. What should they use?",
+    "scenario": "A security team manages dozens of accounts across an Organization and wants an automated way to continuously identify any S3 bucket, <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>, KMS key, or other resource that has been granted access to a principal outside the Organization, across every account, without manually auditing each account's policies one by one. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Manually review the resource policy of every S3 bucket, IAM role, and KMS key in each account on a recurring schedule."
+        "text": "Manually review the resource policy of every S3 bucket, <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>, and KMS key in each account on a recurring schedule."
       },
       {
         "key": "B",
-        "text": "Enable an IAM Access Analyzer organization-level analyzer, which continuously scans resource policies across every account in the Organization and reports any resource granting access to an external principal."
+        "text": "Enable an <a href=\"#\" data-card-link=\"AWS IAM Access Analyzer\">IAM Access Analyzer</a> organization-level analyzer, which continuously scans resource policies across every account in the Organization and reports any resource granting access to an external principal."
       },
       {
         "key": "C",
-        "text": "Use AWS Trusted Advisor's security checks, since they cover this exact use case across accounts automatically."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Trusted Advisor\">AWS Trusted Advisor's security checks</a>, since they cover this exact use case across accounts automatically."
       },
       {
         "key": "D",
-        "text": "Write a custom script using the IAM policy simulator to test every possible external principal against every resource policy."
+        "text": "Write a custom script using the <a href=\"#\" data-card-link=\"AWS IAM\">IAM policy</a> simulator to test every possible external principal against every resource policy."
       }
     ],
     "correctKey": "B",
@@ -1986,7 +1986,7 @@
   {
     "id": "ram-share-route53-private-hosted-zone",
     "domain": "Networking & Connectivity",
-    "scenario": "A central networking team manages a Route 53 private hosted zone containing internal service DNS records that needs to resolve consistently from VPCs in 30 different application accounts across the Organization, without each application account needing its own copy of the hosted zone or manual record duplication. What should they use?",
+    "scenario": "A central networking team manages a <a href=\"#\" data-card-link=\"Amazon Route 53\">Route 53</a> private hosted zone containing internal service DNS records that needs to resolve consistently from VPCs in 30 different application accounts across the Organization, without each application account needing its own copy of the hosted zone or manual record duplication. What should they use?",
     "options": [
       {
         "key": "A",
@@ -1994,7 +1994,7 @@
       },
       {
         "key": "B",
-        "text": "Use AWS Resource Access Manager (RAM) to share the private hosted zone's VPC association capability with the other accounts, allowing their VPCs to be associated with the single centrally managed hosted zone."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Resource Access Manager (RAM)\">AWS Resource Access Manager (RAM)</a> to share the private hosted zone's VPC association capability with the other accounts, allowing their VPCs to be associated with the single centrally managed hosted zone."
       },
       {
         "key": "C",
@@ -2002,7 +2002,7 @@
       },
       {
         "key": "D",
-        "text": "Use Route 53 Resolver outbound endpoints in each of the 30 accounts to forward queries to the central account."
+        "text": "Use <a href=\"#\" data-card-link=\"Route 53 Resolver\">Route 53 Resolver</a> outbound endpoints in each of the 30 accounts to forward queries to the central account."
       }
     ],
     "correctKey": "B",
@@ -2022,19 +2022,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon RDS for MySQL with a fixed, peak-sized instance running continuously."
+        "text": "<a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for MySQL</a> with a fixed, peak-sized instance running continuously."
       },
       {
         "key": "B",
-        "text": "Amazon Aurora Serverless v2."
+        "text": "<a href=\"#\" data-card-link=\"Amazon Aurora Serverless\">Amazon Aurora Serverless v2</a>."
       },
       {
         "key": "C",
-        "text": "Amazon RDS for MySQL with Auto Scaling storage only."
+        "text": "<a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for MySQL</a> with Auto Scaling storage only."
       },
       {
         "key": "D",
-        "text": "Amazon DynamoDB with on-demand capacity mode."
+        "text": "<a href=\"#\" data-card-link=\"Amazon DynamoDB\">Amazon DynamoDB</a> with on-demand capacity mode."
       }
     ],
     "correctKey": "B",
@@ -2054,19 +2054,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon ElastiCache for Memcached"
+        "text": "<a href=\"#\" data-card-link=\"ElastiCache: Redis/Valkey vs. Memcached — how do you choose?\">Amazon ElastiCache for Memcached</a>"
       },
       {
         "key": "B",
-        "text": "Amazon ElastiCache for Redis"
+        "text": "<a href=\"#\" data-card-link=\"ElastiCache: Redis/Valkey vs. Memcached — how do you choose?\">Amazon ElastiCache for Redis</a>"
       },
       {
         "key": "C",
-        "text": "Amazon DynamoDB Accelerator (DAX)"
+        "text": "<a href=\"#\" data-card-link=\"Amazon DynamoDB Accelerator (DAX)\">Amazon DynamoDB Accelerator (DAX)</a>"
       },
       {
         "key": "D",
-        "text": "Amazon S3 with CloudFront caching"
+        "text": "<a href=\"#\" data-card-link=\"Amazon S3\">Amazon S3</a> with CloudFront caching"
       }
     ],
     "correctKey": "B",
@@ -2090,15 +2090,15 @@
       },
       {
         "key": "B",
-        "text": "Store all objects with S3 Intelligent-Tiering, which automatically moves objects between access tiers based on actual observed access patterns with no retrieval fees."
+        "text": "Store all objects with <a href=\"#\" data-card-link=\"Amazon S3\">S3 Intelligent-Tiering</a>, which automatically moves objects between access tiers based on actual observed access patterns with no retrieval fees."
       },
       {
         "key": "C",
-        "text": "Use S3 Glacier Flexible Retrieval for all documents from the moment they're uploaded."
+        "text": "Use <a href=\"#\" data-card-link=\"Amazon S3 Glacier (S3 Glacier Flexible Retrieval / Deep Archive)\">S3 Glacier Flexible Retrieval</a> for all documents from the moment they're uploaded."
       },
       {
         "key": "D",
-        "text": "Configure an S3 Lifecycle policy that transitions every object to S3 Standard-IA after 30 days, regardless of individual access patterns."
+        "text": "Configure an <a href=\"#\" data-card-link=\"Amazon S3\">S3 Lifecycle policy</a> that transitions every object to <a href=\"#\" data-card-link=\"Amazon S3\">S3 Standard-IA</a> after 30 days, regardless of individual access patterns."
       }
     ],
     "correctKey": "B",
@@ -2118,19 +2118,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon Kinesis Data Streams"
+        "text": "<a href=\"#\" data-card-link=\"Amazon Kinesis Data Streams\">Amazon Kinesis Data Streams</a>"
       },
       {
         "key": "B",
-        "text": "Amazon Managed Streaming for Apache Kafka (Amazon MSK)"
+        "text": "<a href=\"#\" data-card-link=\"Amazon MSK\">Amazon Managed Streaming for Apache Kafka (Amazon MSK)</a>"
       },
       {
         "key": "C",
-        "text": "Amazon SQS"
+        "text": "<a href=\"#\" data-card-link=\"Amazon SQS\">Amazon SQS</a>"
       },
       {
         "key": "D",
-        "text": "Amazon EventBridge"
+        "text": "<a href=\"#\" data-card-link=\"Amazon EventBridge\">Amazon EventBridge</a>"
       }
     ],
     "correctKey": "B",
@@ -2146,7 +2146,7 @@
   {
     "id": "api-gateway-mutual-tls-b2b",
     "domain": "Networking & Connectivity",
-    "scenario": "A company is building a new B2B API that will be consumed by a small number of enterprise partners, and the security requirement is that each partner's calling application must present a valid client-side X.509 certificate that the API Gateway verifies before allowing the request through, in addition to standard IAM or API-key authorization. What API Gateway feature should they configure?",
+    "scenario": "A company is building a new B2B API that will be consumed by a small number of enterprise partners, and the security requirement is that each partner's calling application must present a valid client-side X.509 certificate that the <a href=\"#\" data-card-link=\"Amazon API Gateway\">API Gateway</a> verifies before allowing the request through, in addition to standard IAM or API-key authorization. What API Gateway feature should they configure?",
     "options": [
       {
         "key": "A",
@@ -2154,15 +2154,15 @@
       },
       {
         "key": "B",
-        "text": "API Gateway mutual TLS (mTLS) authentication, configured with a truststore of the partners' certificate authorities."
+        "text": "<a href=\"#\" data-card-link=\"Amazon API Gateway\">API Gateway mutual TLS (mTLS)</a> authentication, configured with a truststore of the partners' certificate authorities."
       },
       {
         "key": "C",
-        "text": "AWS WAF with an IP-based allow list restricting access to the partners' known IP ranges."
+        "text": "<a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> with an IP-based allow list restricting access to the partners' known IP ranges."
       },
       {
         "key": "D",
-        "text": "API Gateway resource policies restricting access to a specific VPC endpoint."
+        "text": "<a href=\"#\" data-card-link=\"Amazon API Gateway\">API Gateway</a> resource policies restricting access to a specific VPC endpoint."
       }
     ],
     "correctKey": "B",
@@ -2178,23 +2178,23 @@
   {
     "id": "waf-shield-advanced-new-public-app",
     "domain": "Security & Compliance",
-    "scenario": "A company is launching a new public-facing e-commerce application and expects it to be a potential target for both application-layer attacks, such as SQL injection and bad bots, and large-scale volumetric DDoS attacks. In addition to mitigation, the company specifically wants cost protection, reimbursement for scaling charges incurred as a direct result of a DDoS attack, and access to AWS's DDoS Response Team during an active attack. What should they implement?",
+    "scenario": "A company is launching a new public-facing e-commerce application and expects it to be a potential target for both application-layer attacks, such as SQL injection and bad bots, and large-scale volumetric DDoS attacks. In addition to mitigation, the company specifically wants cost protection, reimbursement for scaling charges incurred as a direct result of a DDoS attack, and access to AWS's <a href=\"#\" data-card-link=\"What does Shield Advanced add over Shield Standard?\">DDoS Response Team</a> during an active attack. What should they implement?",
     "options": [
       {
         "key": "A",
-        "text": "AWS WAF alone, with rate-based rules to mitigate volumetric attacks."
+        "text": "<a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> alone, with rate-based rules to mitigate volumetric attacks."
       },
       {
         "key": "B",
-        "text": "AWS Shield Standard, which is automatically included at no extra cost for all AWS customers."
+        "text": "<a href=\"#\" data-card-link=\"AWS Shield\">AWS Shield Standard</a>, which is automatically included at no extra cost for all AWS customers."
       },
       {
         "key": "C",
-        "text": "AWS WAF for application-layer protection, combined with AWS Shield Advanced for enhanced DDoS mitigation, cost protection against scaling charges from attacks, and DRT access."
+        "text": "<a href=\"#\" data-card-link=\"AWS WAF\">AWS WAF</a> for application-layer protection, combined with <a href=\"#\" data-card-link=\"What does Shield Advanced add over Shield Standard?\">AWS Shield Advanced</a> for enhanced DDoS mitigation, cost protection against scaling charges from attacks, and DRT access."
       },
       {
         "key": "D",
-        "text": "Amazon CloudFront alone, since it absorbs all DDoS traffic automatically at the edge."
+        "text": "<a href=\"#\" data-card-link=\"Amazon CloudFront\">Amazon CloudFront</a> alone, since it absorbs all DDoS traffic automatically at the edge."
       }
     ],
     "correctKey": "C",
@@ -2222,11 +2222,11 @@
       },
       {
         "key": "C",
-        "text": "Use Amazon RDS instead of DynamoDB, since only a relational database can efficiently model related entities."
+        "text": "Use <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS</a> instead of DynamoDB, since only a relational database can efficiently model related entities."
       },
       {
         "key": "D",
-        "text": "Create a separate table per entity type, and use DynamoDB Streams to continuously replicate a denormalized copy of all data into a fourth join table."
+        "text": "Create a separate table per entity type, and use <a href=\"#\" data-card-link=\"Amazon DynamoDB\">DynamoDB Streams</a> to continuously replicate a denormalized copy of all data into a fourth join table."
       }
     ],
     "correctKey": "B",
@@ -2250,15 +2250,15 @@
       },
       {
         "key": "B",
-        "text": "Amazon Cognito user pools, configured with social identity providers and a SAML identity provider, issuing standard tokens to the app after successful federated sign-in."
+        "text": "Amazon <a href=\"#\" data-card-link=\"Cognito User Pools vs. Identity Pools — what's the difference?\">Cognito user pools</a>, configured with social identity providers and a SAML identity provider, issuing standard tokens to the app after successful federated sign-in."
       },
       {
         "key": "C",
-        "text": "AWS IAM Identity Center, since it already supports external identity providers for workforce access."
+        "text": "AWS <a href=\"#\" data-card-link=\"AWS IAM Identity Center\">IAM Identity Center</a>, since it already supports external identity providers for workforce access."
       },
       {
         "key": "D",
-        "text": "Amazon Cognito identity pools alone, without a user pool, to directly grant temporary AWS credentials to app users."
+        "text": "Amazon <a href=\"#\" data-card-link=\"Cognito User Pools vs. Identity Pools — what's the difference?\">Cognito identity pools</a> alone, without a user pool, to directly grant temporary AWS credentials to app users."
       }
     ],
     "correctKey": "B",
@@ -2278,19 +2278,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon DynamoDB Global Tables as the session store."
+        "text": "<a href=\"#\" data-card-link=\"Amazon DynamoDB\">Amazon DynamoDB Global Tables</a> as the session store."
       },
       {
         "key": "B",
-        "text": "Amazon ElastiCache for Redis with Global Datastore, replicating across the three Regions."
+        "text": "<a href=\"#\" data-card-link=\"Amazon ElastiCache\">Amazon ElastiCache for Redis with Global Datastore</a>, replicating across the three Regions."
       },
       {
         "key": "C",
-        "text": "Amazon RDS Multi-AZ, storing session data directly in the relational database."
+        "text": "<a href=\"#\" data-card-link=\"RDS Multi-AZ vs. read replicas — what's the difference?\">Amazon RDS Multi-AZ</a>, storing session data directly in the relational database."
       },
       {
         "key": "D",
-        "text": "Amazon S3 Cross-Region Replication, storing session data as objects."
+        "text": "<a href=\"#\" data-card-link=\"Amazon S3\">Amazon S3</a> Cross-Region Replication, storing session data as objects."
       }
     ],
     "correctKey": "B",
@@ -2310,15 +2310,15 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon Redshift with a fixed, large provisioned cluster sized for the month-end peak, running continuously."
+        "text": "<a href=\"#\" data-card-link=\"Amazon Redshift\">Amazon Redshift</a> with a fixed, large provisioned cluster sized for the month-end peak, running continuously."
       },
       {
         "key": "B",
-        "text": "Amazon Redshift Serverless, which automatically scales compute capacity based on actual query demand and charges based on usage."
+        "text": "<a href=\"#\" data-card-link=\"Amazon Redshift\">Amazon Redshift Serverless</a>, which automatically scales compute capacity based on actual query demand and charges based on usage."
       },
       {
         "key": "C",
-        "text": "Amazon Athena, since it can replace all data-warehousing use cases regardless of workload pattern."
+        "text": "<a href=\"#\" data-card-link=\"Amazon Athena\">Amazon Athena</a>, since it can replace all data-warehousing use cases regardless of workload pattern."
       },
       {
         "key": "D",
@@ -2342,7 +2342,7 @@
     "options": [
       {
         "key": "A",
-        "text": "Amazon API Gateway WebSocket APIs, having each device maintain a persistent WebSocket connection."
+        "text": "<a href=\"#\" data-card-link=\"Amazon API Gateway\">Amazon API Gateway WebSocket APIs</a>, having each device maintain a persistent WebSocket connection."
       },
       {
         "key": "B",
@@ -2350,11 +2350,11 @@
       },
       {
         "key": "C",
-        "text": "Amazon SQS, having each device poll a shared queue for messages."
+        "text": "<a href=\"#\" data-card-link=\"Amazon SQS\">Amazon SQS</a>, having each device poll a shared queue for messages."
       },
       {
         "key": "D",
-        "text": "Amazon EC2 instances running a self-managed, open-source MQTT broker."
+        "text": "<a href=\"#\" data-card-link=\"Amazon EC2\">Amazon EC2</a> instances running a self-managed, open-source MQTT broker."
       }
     ],
     "correctKey": "B",
@@ -2370,7 +2370,7 @@
   {
     "id": "eks-fargate-profiles-multi-tenant-isolation",
     "domain": "Compute",
-    "scenario": "A company is building a new multi-tenant SaaS platform on Amazon EKS, where each tenant's workloads run in their own Kubernetes namespace, and the security requirement is that tenants' pods must never share the same underlying compute host, to prevent any risk of container escape exposing another tenant's data, while still minimizing the operational overhead of managing worker node capacity across many namespaces. What should they use?",
+    "scenario": "A company is building a new multi-tenant SaaS platform on <a href=\"#\" data-card-link=\"Amazon EKS\">Amazon EKS</a>, where each tenant's workloads run in their own Kubernetes namespace, and the security requirement is that tenants' pods must never share the same underlying compute host, to prevent any risk of container escape exposing another tenant's data, while still minimizing the operational overhead of managing worker node capacity across many namespaces. What should they use?",
     "options": [
       {
         "key": "A",
@@ -2378,7 +2378,7 @@
       },
       {
         "key": "B",
-        "text": "AWS Fargate profiles configured per namespace, so each tenant's pods run on their own dedicated, isolated Fargate infrastructure without a shared underlying EC2 host."
+        "text": "<a href=\"#\" data-card-link=\"AWS Fargate\">AWS Fargate profiles</a> configured per namespace, so each tenant's pods run on their own dedicated, isolated Fargate infrastructure without a shared underlying EC2 host."
       },
       {
         "key": "C",
@@ -2402,23 +2402,23 @@
   {
     "id": "vpc-lattice-cross-account-service-network",
     "domain": "Networking & Connectivity",
-    "scenario": "A company is building a new set of microservices that need to communicate with each other across multiple VPCs and multiple AWS accounts, with consistent access control, observability, and traffic management applied uniformly regardless of which VPC or account a service happens to run in, without each team needing to set up their own VPC peering, Transit Gateway routes, or PrivateLink endpoints for every service-to-service connection. What should they use?",
+    "scenario": "A company is building a new set of microservices that need to communicate with each other across multiple VPCs and multiple AWS accounts, with consistent access control, observability, and traffic management applied uniformly regardless of which VPC or account a service happens to run in, without each team needing to set up their own <a href=\"#\" data-card-link=\"VPC Peering\">VPC peering</a>, <a href=\"#\" data-card-link=\"AWS Transit Gateway\">Transit Gateway</a> routes, or PrivateLink endpoints for every service-to-service connection. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "VPC Peering between every pair of VPCs that need to communicate."
+        "text": "<a href=\"#\" data-card-link=\"VPC Peering\">VPC Peering</a> between every pair of VPCs that need to communicate."
       },
       {
         "key": "B",
-        "text": "Amazon VPC Lattice, defining a service network that services in different VPCs and accounts can join, with centralized access control and traffic management applied consistently across the network."
+        "text": "<a href=\"#\" data-card-link=\"Amazon VPC Lattice\">Amazon VPC Lattice</a>, defining a service network that services in different VPCs and accounts can join, with centralized access control and traffic management applied consistently across the network."
       },
       {
         "key": "C",
-        "text": "AWS Transit Gateway alone, connecting all VPCs at the network layer."
+        "text": "<a href=\"#\" data-card-link=\"AWS Transit Gateway\">AWS Transit Gateway</a> alone, connecting all VPCs at the network layer."
       },
       {
         "key": "D",
-        "text": "A separate AWS PrivateLink endpoint service for every individual microservice."
+        "text": "A separate <a href=\"#\" data-card-link=\"AWS PrivateLink\">AWS PrivateLink</a> endpoint service for every individual microservice."
       }
     ],
     "correctKey": "B",
@@ -2438,19 +2438,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Multiple CloudFront distributions, one per origin, with Route 53 health checks to redirect users between them."
+        "text": "Multiple CloudFront distributions, one per origin, with <a href=\"#\" data-card-link=\"Route 53: Failover routing policy\">Route 53 health check</a>s to redirect users between them."
       },
       {
         "key": "B",
-        "text": "A CloudFront origin group, consisting of a primary and a secondary origin, with failover criteria configured, such as specific HTTP error codes, to automatically shift requests to the secondary origin."
+        "text": "A <a href=\"#\" data-card-link=\"CloudFront: Origin Groups (failover)\">CloudFront origin group</a>, consisting of a primary and a secondary origin, with failover criteria configured, such as specific HTTP error codes, to automatically shift requests to the secondary origin."
       },
       {
         "key": "C",
-        "text": "Lambda@Edge functions that manually check origin health on every request and choose an origin dynamically."
+        "text": "<a href=\"#\" data-card-link=\"Lambda@Edge vs. CloudFront Functions — how do you choose?\">Lambda@Edge functions</a> that manually check origin health on every request and choose an origin dynamically."
       },
       {
         "key": "D",
-        "text": "AWS Global Accelerator in front of CloudFront to handle the origin failover."
+        "text": "<a href=\"#\" data-card-link=\"AWS Global Accelerator\">AWS Global Accelerator</a> in front of CloudFront to handle the origin failover."
       }
     ],
     "correctKey": "B",
@@ -2470,19 +2470,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Use AWS Lambda@Edge for both needs."
+        "text": "Use AWS <a href=\"#\" data-card-link=\"Lambda@Edge vs. CloudFront Functions — how do you choose?\">Lambda@Edge</a> for both needs."
       },
       {
         "key": "B",
-        "text": "Use Amazon CloudFront Functions for the high-volume, lightweight case, since it's optimized for sub-millisecond JavaScript operations, and use Lambda@Edge for the case needing network calls, since it supports longer execution times, more memory, and calls to external services that CloudFront Functions cannot make."
+        "text": "Use Amazon <a href=\"#\" data-card-link=\"Lambda@Edge vs. CloudFront Functions — how do you choose?\">CloudFront Functions</a> for the high-volume, lightweight case, since it's optimized for sub-millisecond JavaScript operations, and use <a href=\"#\" data-card-link=\"Lambda@Edge vs. CloudFront Functions — how do you choose?\">Lambda@Edge</a> for the case needing network calls, since it supports longer execution times, more memory, and calls to external services that CloudFront Functions cannot make."
       },
       {
         "key": "C",
-        "text": "Use Amazon CloudFront Functions for both needs."
+        "text": "Use Amazon <a href=\"#\" data-card-link=\"Lambda@Edge vs. CloudFront Functions — how do you choose?\">CloudFront Functions</a> for both needs."
       },
       {
         "key": "D",
-        "text": "Use AWS Step Functions at the edge for both needs."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Step Functions\">AWS Step Functions</a> at the edge for both needs."
       }
     ],
     "correctKey": "B",
@@ -2510,11 +2510,11 @@
       },
       {
         "key": "C",
-        "text": "Enable DynamoDB Auto Scaling on the existing provisioned table, targeting a very high utilization percentage to avoid ever needing to scale."
+        "text": "Enable <a href=\"#\" data-card-link=\"Amazon DynamoDB\">DynamoDB Auto Scaling</a> on the existing provisioned table, targeting a very high utilization percentage to avoid ever needing to scale."
       },
       {
         "key": "D",
-        "text": "Migrate to Amazon RDS, since relational databases handle unpredictable traffic more gracefully than DynamoDB."
+        "text": "Migrate to <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS</a>, since relational databases handle unpredictable traffic more gracefully than DynamoDB."
       }
     ],
     "correctKey": "B",
@@ -2534,11 +2534,11 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Lambda Provisioned Concurrency, configured to keep a fixed number of execution environments warmed at all times."
+        "text": "<a href=\"#\" data-card-link=\"AWS Lambda: SnapStart vs. Provisioned Concurrency\">AWS Lambda Provisioned Concurrency</a>, configured to keep a fixed number of execution environments warmed at all times."
       },
       {
         "key": "B",
-        "text": "AWS Lambda SnapStart, which restores execution environments from a cached, pre-initialized snapshot rather than performing full JVM initialization on every cold start."
+        "text": "<a href=\"#\" data-card-link=\"AWS Lambda: SnapStart vs. Provisioned Concurrency\">AWS Lambda SnapStart</a>, which restores execution environments from a cached, pre-initialized snapshot rather than performing full JVM initialization on every cold start."
       },
       {
         "key": "C",
@@ -2566,11 +2566,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Apply an S3 Lifecycle rule transitioning all existing objects to S3 Glacier Deep Archive after 0 days."
+        "text": "Apply an S3 Lifecycle rule transitioning all existing objects to <a href=\"#\" data-card-link=\"Amazon S3 Glacier (S3 Glacier Flexible Retrieval / Deep Archive)\">S3 Glacier Deep Archive</a> after 0 days."
       },
       {
         "key": "B",
-        "text": "Enable S3 Intelligent-Tiering on the bucket, letting S3 automatically move each object between access tiers based on its own observed access pattern, without a manual audit."
+        "text": "Enable <a href=\"#\" data-card-link=\"Amazon S3\">S3 Intelligent-Tiering</a> on the bucket, letting S3 automatically move each object between access tiers based on its own observed access pattern, without a manual audit."
       },
       {
         "key": "C",
@@ -2594,7 +2594,7 @@
   {
     "id": "codedeploy-blue-green-ecs-risky-deployment",
     "domain": "Reliability",
-    "scenario": "An existing production application on Amazon ECS has caused multiple incidents where a bad deployment took down the entire service simultaneously, because the current deployment process replaces all running tasks with the new version at once, with no automatic rollback if the new version starts failing health checks. The team wants to reduce deployment risk so a bad release only affects a small fraction of traffic and can be automatically rolled back, without changing the application code itself. What should they implement?",
+    "scenario": "An existing production application on <a href=\"#\" data-card-link=\"Amazon ECS\">Amazon ECS</a> has caused multiple incidents where a bad deployment took down the entire service simultaneously, because the current deployment process replaces all running tasks with the new version at once, with no automatic rollback if the new version starts failing health checks. The team wants to reduce deployment risk so a bad release only affects a small fraction of traffic and can be automatically rolled back, without changing the application code itself. What should they implement?",
     "options": [
       {
         "key": "A",
@@ -2602,7 +2602,7 @@
       },
       {
         "key": "B",
-        "text": "Switch to a blue/green deployment strategy using AWS CodeDeploy for ECS, shifting traffic to a new task set with automatic rollback triggered by CloudWatch alarms if health checks fail."
+        "text": "Switch to a <a href=\"#\" data-card-link=\"AWS CodeDeploy\">blue/green deployment</a> strategy using <a href=\"#\" data-card-link=\"AWS CodeDeploy\">AWS CodeDeploy for ECS</a>, shifting traffic to a new task set with automatic rollback triggered by <a href=\"#\" data-card-link=\"Amazon CloudWatch\">CloudWatch alarms</a> if health checks fail."
       },
       {
         "key": "C",
@@ -2630,11 +2630,11 @@
     "options": [
       {
         "key": "A",
-        "text": "Manually take AMI snapshots of the production instances every night and copy them to the second Region."
+        "text": "Manually take <a href=\"#\" data-card-link=\"Amazon Machine Image (AMI)\">AMI snapshots</a> of the production instances every night and copy them to the second Region."
       },
       {
         "key": "B",
-        "text": "AWS Elastic Disaster Recovery (DRS), continuously replicating the application's servers at the block level into a low-cost staging area in the second Region, ready for fast, automated recovery launch when needed."
+        "text": "<a href=\"#\" data-card-link=\"AWS Elastic Disaster Recovery (DRS)\">AWS Elastic Disaster Recovery (DRS)</a>, continuously replicating the application's servers at the block level into a low-cost staging area in the second Region, ready for fast, automated recovery launch when needed."
       },
       {
         "key": "C",
@@ -2658,7 +2658,7 @@
   {
     "id": "systems-manager-explorer-opscenter-centralized-ops",
     "domain": "Operational Excellence",
-    "scenario": "An existing large EC2 fleet across multiple accounts generates operational issues, such as failed patch attempts, CloudWatch alarms, and Config non-compliance findings, currently scattered across many different consoles and accounts, making it hard for the operations team to get a single prioritized view of what needs attention across the whole fleet. What should they implement to centralize and prioritize this operational information?",
+    "scenario": "An existing large EC2 fleet across multiple accounts generates operational issues, such as failed patch attempts, <a href=\"#\" data-card-link=\"Amazon CloudWatch\">CloudWatch alarms</a>, and Config non-compliance findings, currently scattered across many different consoles and accounts, making it hard for the operations team to get a single prioritized view of what needs attention across the whole fleet. What should they implement to centralize and prioritize this operational information?",
     "options": [
       {
         "key": "A",
@@ -2666,7 +2666,7 @@
       },
       {
         "key": "B",
-        "text": "Use AWS Systems Manager Explorer for a centralized, cross-account operational dashboard, and OpsCenter to aggregate related operational issues from CloudWatch, Config, and other sources into a single, prioritized view for investigation."
+        "text": "Use <a href=\"#\" data-card-link=\"Systems Manager: Explorer and OpsCenter\">AWS Systems Manager Explorer</a> for a centralized, cross-account operational dashboard, and <a href=\"#\" data-card-link=\"Systems Manager: Explorer and OpsCenter\">OpsCenter</a> to aggregate related operational issues from CloudWatch, Config, and other sources into a single, prioritized view for investigation."
       },
       {
         "key": "C",
@@ -2674,7 +2674,7 @@
       },
       {
         "key": "D",
-        "text": "Use AWS Cost Explorer to identify which accounts have the most operational issues."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Cost Explorer\">AWS Cost Explorer</a> to identify which accounts have the most operational issues."
       }
     ],
     "correctKey": "B",
@@ -2690,23 +2690,23 @@
   {
     "id": "nat-gateway-cost-vpc-endpoint-retrofit",
     "domain": "Cost Optimization",
-    "scenario": "An existing application running in a private subnet has been generating unexpectedly high NAT Gateway data processing charges, and a cost investigation reveals the vast majority of that traffic is actually just the application reading and writing large volumes of data to an S3 bucket in the same Region, currently routed out through the NAT Gateway to reach S3's public endpoint. What is the most direct way to reduce this specific cost, without changing the application's code?",
+    "scenario": "An existing application running in a private subnet has been generating unexpectedly high <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a> data processing charges, and a cost investigation reveals the vast majority of that traffic is actually just the application reading and writing large volumes of data to an S3 bucket in the same Region, currently routed out through the NAT Gateway to reach S3's public endpoint. What is the most direct way to reduce this specific cost, without changing the application's code?",
     "options": [
       {
         "key": "A",
-        "text": "Replace the NAT Gateway with several smaller NAT Gateways to distribute the data processing charges."
+        "text": "Replace the <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a> with several smaller NAT Gateways to distribute the data processing charges."
       },
       {
         "key": "B",
-        "text": "Add a Gateway VPC endpoint for S3 to the route table, so traffic destined for S3 routes directly over AWS's network instead of through the NAT Gateway."
+        "text": "Add a <a href=\"#\" data-card-link=\"VPC Endpoints: Gateway vs. Interface — what's the difference?\">Gateway VPC endpoint</a> for S3 to the route table, so traffic destined for S3 routes directly over AWS's network instead of through the <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a>."
       },
       {
         "key": "C",
-        "text": "Move the application to a public subnet with a public IP address to bypass the NAT Gateway entirely."
+        "text": "Move the application to a public subnet with a public IP address to bypass the <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a> entirely."
       },
       {
         "key": "D",
-        "text": "Compress all data before sending it to S3 to reduce the volume of NAT Gateway data processing."
+        "text": "Compress all data before sending it to S3 to reduce the volume of <a href=\"#\" data-card-link=\"Amazon VPC - NAT Gateway\">NAT Gateway</a> data processing."
       }
     ],
     "correctKey": "B",
@@ -2730,7 +2730,7 @@
       },
       {
         "key": "B",
-        "text": "Insert an Amazon SQS queue between the web tier and the image-processing service, having the web tier enqueue image-processing jobs instead of calling the service directly, and having the processing service consume messages at its own sustainable rate."
+        "text": "Insert an <a href=\"#\" data-card-link=\"Amazon SQS\">Amazon SQS</a> queue between the web tier and the image-processing service, having the web tier enqueue image-processing jobs instead of calling the service directly, and having the processing service consume messages at its own sustainable rate."
       },
       {
         "key": "C",
@@ -2754,7 +2754,7 @@
   {
     "id": "cloudformation-drift-detection-stacksets-remediation",
     "domain": "Operational Excellence",
-    "scenario": "A company manages baseline security resources, such as a specific IAM role, a CloudWatch alarm, and an S3 bucket policy, across 40 accounts using CloudFormation StackSets, but has discovered that several accounts' resources have been manually modified outside of CloudFormation over time, causing inconsistency with the intended baseline. The team wants an ongoing way to detect and correct this drift across all 40 accounts. What should they do?",
+    "scenario": "A company manages baseline security resources, such as a specific <a href=\"#\" data-card-link=\"AWS IAM\">IAM role</a>, a CloudWatch alarm, and an S3 bucket policy, across 40 accounts using <a href=\"#\" data-card-link=\"AWS CloudFormation\">CloudFormation StackSets</a>, but has discovered that several accounts' resources have been manually modified outside of CloudFormation over time, causing inconsistency with the intended baseline. The team wants an ongoing way to detect and correct this drift across all 40 accounts. What should they do?",
     "options": [
       {
         "key": "A",
@@ -2762,7 +2762,7 @@
       },
       {
         "key": "B",
-        "text": "Use CloudFormation drift detection across the StackSet's stack instances to identify accounts where actual resource configuration has diverged from the template, and update the StackSet to reapply the intended configuration to drifted instances."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS CloudFormation\">CloudFormation drift detection</a> across the StackSet's stack instances to identify accounts where actual resource configuration has diverged from the template, and update the StackSet to reapply the intended configuration to drifted instances."
       },
       {
         "key": "C",
@@ -2770,7 +2770,7 @@
       },
       {
         "key": "D",
-        "text": "Disable the ability for anyone to make manual changes in any of the 40 accounts using an SCP that denies all write actions."
+        "text": "Disable the ability for anyone to make manual changes in any of the 40 accounts using an <a href=\"#\" data-card-link=\"SCPs vs. IAM permissions — what's the difference?\">SCP</a> that denies all write actions."
       }
     ],
     "correctKey": "B",
@@ -2794,15 +2794,15 @@
       },
       {
         "key": "B",
-        "text": "Add Amazon DynamoDB Accelerator (DAX) as an in-memory caching layer in front of the table, using the DAX client to transparently cache frequently read items."
+        "text": "Add <a href=\"#\" data-card-link=\"Amazon DynamoDB Accelerator (DAX)\">Amazon DynamoDB Accelerator (DAX)</a> as an in-memory caching layer in front of the table, using the <a href=\"#\" data-card-link=\"Amazon DynamoDB Accelerator (DAX)\">DAX client</a> to transparently cache frequently read items."
       },
       {
         "key": "C",
-        "text": "Migrate the product catalog data to Amazon RDS, which has lower read latency than DynamoDB."
+        "text": "Migrate the product catalog data to <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS</a>, which has lower read latency than DynamoDB."
       },
       {
         "key": "D",
-        "text": "Enable DynamoDB Streams and have a separate service maintain a denormalized read-optimized copy of the data."
+        "text": "Enable <a href=\"#\" data-card-link=\"Amazon DynamoDB\">DynamoDB Streams</a> and have a separate service maintain a denormalized read-optimized copy of the data."
       }
     ],
     "correctKey": "B",
@@ -2826,7 +2826,7 @@
       },
       {
         "key": "B",
-        "text": "Use AWS Trusted Advisor's cost optimization checks to identify this class of underutilized or idle resources on a recurring basis, and trigger a Lambda function via EventBridge on a schedule to automatically clean up resources matching well-understood, safe criteria."
+        "text": "Use <a href=\"#\" data-card-link=\"AWS Trusted Advisor\">AWS Trusted Advisor's cost optimization checks</a> to identify this class of underutilized or idle resources on a recurring basis, and trigger a Lambda function via EventBridge on a schedule to automatically clean up resources matching well-understood, safe criteria."
       },
       {
         "key": "C",
@@ -2850,15 +2850,15 @@
   {
     "id": "adot-existing-app-observability-gaps",
     "domain": "Operational Excellence",
-    "scenario": "An existing microservices application currently uses several different, vendor-specific tracing and metrics libraries across different services, since each team chose their own, making it difficult to get a consistent, correlated view of a request's journey across the whole system. The company wants to standardize on an open, vendor-neutral instrumentation approach that can export data to multiple backends, including AWS X-Ray and CloudWatch, or potentially other tools later, without locking into one vendor's proprietary SDK. What should they adopt?",
+    "scenario": "An existing microservices application currently uses several different, vendor-specific tracing and metrics libraries across different services, since each team chose their own, making it difficult to get a consistent, correlated view of a request's journey across the whole system. The company wants to standardize on an open, vendor-neutral instrumentation approach that can export data to multiple backends, including <a href=\"#\" data-card-link=\"AWS X-Ray\">AWS X-Ray</a> and CloudWatch, or potentially other tools later, without locking into one vendor's proprietary SDK. What should they adopt?",
     "options": [
       {
         "key": "A",
-        "text": "Standardize on AWS X-Ray's proprietary SDK across every service, since it's the only option that integrates with AWS services."
+        "text": "Standardize on <a href=\"#\" data-card-link=\"AWS X-Ray\">AWS X-Ray</a>'s proprietary SDK across every service, since it's the only option that integrates with AWS services."
       },
       {
         "key": "B",
-        "text": "Adopt the AWS Distro for OpenTelemetry (ADOT), instrumenting each service with the vendor-neutral OpenTelemetry standard, and configure the ADOT Collector to export trace and metric data to X-Ray, CloudWatch, or other supported backends."
+        "text": "Adopt the <a href=\"#\" data-card-link=\"AWS Distro for OpenTelemetry (ADOT)\">AWS Distro for OpenTelemetry (ADOT)</a>, instrumenting each service with the vendor-neutral OpenTelemetry standard, and configure the ADOT Collector to export trace and metric data to X-Ray, CloudWatch, or other supported backends."
       },
       {
         "key": "C",
@@ -2866,7 +2866,7 @@
       },
       {
         "key": "D",
-        "text": "Remove all existing instrumentation and rely solely on VPC Flow Logs for observability going forward."
+        "text": "Remove all existing instrumentation and rely solely on <a href=\"#\" data-card-link=\"VPC Flow Logs\">VPC Flow Logs</a> for observability going forward."
       }
     ],
     "correctKey": "B",
@@ -2886,19 +2886,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Application Migration Service (MGN)"
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a>"
       },
       {
         "key": "B",
-        "text": "AWS Mainframe Modernization"
+        "text": "<a href=\"#\" data-card-link=\"AWS Mainframe Modernization\">AWS Mainframe Modernization</a>"
       },
       {
         "key": "C",
-        "text": "AWS Database Migration Service (DMS)"
+        "text": "<a href=\"#\" data-card-link=\"AWS DMS\">AWS Database Migration Service (DMS)</a>"
       },
       {
         "key": "D",
-        "text": "AWS App2Container"
+        "text": "<a href=\"#\" data-card-link=\"AWS App2Container\">AWS App2Container</a>"
       }
     ],
     "correctKey": "B",
@@ -2918,19 +2918,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Rewrite all batch jobs to use AWS Glue's proprietary ETL scripting model instead."
+        "text": "Rewrite all batch jobs to use <a href=\"#\" data-card-link=\"AWS Glue\">AWS Glue</a>'s proprietary ETL scripting model instead."
       },
       {
         "key": "B",
-        "text": "Amazon EMR, running the same open-source big-data frameworks such as Spark, Hive, and Presto on a managed, elastically scalable cluster."
+        "text": "<a href=\"#\" data-card-link=\"Amazon EMR\">Amazon EMR</a>, running the same open-source big-data frameworks such as Spark, Hive, and Presto on a managed, elastically scalable cluster."
       },
       {
         "key": "C",
-        "text": "Amazon Redshift, migrating all data-processing logic into SQL-based transformations."
+        "text": "<a href=\"#\" data-card-link=\"Amazon Redshift\">Amazon Redshift</a>, migrating all data-processing logic into SQL-based transformations."
       },
       {
         "key": "D",
-        "text": "AWS Batch, containerizing each Spark job to run as an independent batch job."
+        "text": "<a href=\"#\" data-card-link=\"AWS Batch\">AWS Batch</a>, containerizing each Spark job to run as an independent batch job."
       }
     ],
     "correctKey": "B",
@@ -2946,23 +2946,23 @@
   {
     "id": "windows-file-shares-fsx-windows-ad-migration",
     "domain": "Migration Strategy",
-    "scenario": "A company is migrating its on-premises Windows file servers, used heavily by desktop applications via SMB with existing Active Directory-based folder permissions, to AWS as part of a broader data center exit, and wants the migrated file shares to preserve existing Windows-native features such as the SMB protocol, NTFS ACLs, and Active Directory-integrated permissions, with minimal changes to how end users and applications access files. What should they use?",
+    "scenario": "A company is migrating its on-premises Windows file servers, used heavily by desktop applications via SMB with existing <a href=\"#\" data-card-link=\"AWS Directory Service\">Active Directory</a>-based folder permissions, to AWS as part of a broader data center exit, and wants the migrated file shares to preserve existing Windows-native features such as the SMB protocol, NTFS ACLs, and Active Directory-integrated permissions, with minimal changes to how end users and applications access files. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "Amazon EFS, since it's AWS's primary managed file storage service."
+        "text": "<a href=\"#\" data-card-link=\"Amazon EFS\">Amazon EFS</a>, since it's AWS's primary managed file storage service."
       },
       {
         "key": "B",
-        "text": "Amazon FSx for Windows File Server, integrated with the company's existing Active Directory for authentication and NTFS-based permissions."
+        "text": "<a href=\"#\" data-card-link=\"Amazon FSx\">Amazon FSx for Windows File Server</a>, integrated with the company's existing <a href=\"#\" data-card-link=\"AWS Directory Service\">Active Directory</a> for authentication and NTFS-based permissions."
       },
       {
         "key": "C",
-        "text": "Amazon S3, since object storage can serve as a drop-in replacement for any file share."
+        "text": "<a href=\"#\" data-card-link=\"Amazon S3\">Amazon S3</a>, since object storage can serve as a drop-in replacement for any file share."
       },
       {
         "key": "D",
-        "text": "Amazon FSx for Lustre, since it offers the highest throughput among AWS's managed file systems."
+        "text": "<a href=\"#\" data-card-link=\"Amazon FSx\">Amazon FSx for Lustre</a>, since it offers the highest throughput among AWS's managed file systems."
       }
     ],
     "correctKey": "B",
@@ -2982,19 +2982,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Pricing Calculator, manually entering estimated future AWS resource specifications."
+        "text": "<a href=\"#\" data-card-link=\"AWS Pricing Calculator\">AWS Pricing Calculator</a>, manually entering estimated future AWS resource specifications."
       },
       {
         "key": "B",
-        "text": "AWS Migration Evaluator, which collects on-premises inventory and utilization data to build a data-driven business case comparing current costs to a right-sized AWS environment."
+        "text": "<a href=\"#\" data-card-link=\"AWS Migration Evaluator\">AWS Migration Evaluator</a>, which collects on-premises inventory and utilization data to build a data-driven business case comparing current costs to a right-sized AWS environment."
       },
       {
         "key": "C",
-        "text": "AWS Cost Explorer, since it already shows historical AWS costs."
+        "text": "<a href=\"#\" data-card-link=\"AWS Cost Explorer\">AWS Cost Explorer</a>, since it already shows historical AWS costs."
       },
       {
         "key": "D",
-        "text": "AWS Trusted Advisor, since it provides cost optimization recommendations."
+        "text": "<a href=\"#\" data-card-link=\"AWS Trusted Advisor\">AWS Trusted Advisor</a>, since it provides cost optimization recommendations."
       }
     ],
     "correctKey": "B",
@@ -3010,23 +3010,23 @@
   {
     "id": "six-rs-retire-vs-retain",
     "domain": "Migration Strategy",
-    "scenario": "During a large-scale application portfolio assessment ahead of a data center exit, the team identifies two categories of applications: a set of applications no longer used by any business unit with zero active users, and a small set of highly specialized, deeply regulated applications that cannot legally or technically be moved to the cloud in the current timeframe and must remain running exactly where they are for now. Which two of the 6 R's migration strategies apply to these two categories respectively?",
+    "scenario": "During a large-scale application portfolio assessment ahead of a data center exit, the team identifies two categories of applications: a set of applications no longer used by any business unit with zero active users, and a small set of highly specialized, deeply regulated applications that cannot legally or technically be moved to the cloud in the current timeframe and must remain running exactly where they are for now. Which two of the <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">6 R's migration strategies</a> apply to these two categories respectively?",
     "options": [
       {
         "key": "A",
-        "text": "Rehost for the first category, Replatform for the second."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Rehost</a> for the first category, <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Replatform</a> for the second."
       },
       {
         "key": "B",
-        "text": "Retire for the first category, Retain for the second."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Retire</a> for the first category, <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Retain</a> for the second."
       },
       {
         "key": "C",
-        "text": "Repurchase for the first category, Refactor for the second."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Repurchase</a> for the first category, <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Refactor</a> for the second."
       },
       {
         "key": "D",
-        "text": "Retain for the first category, Retire for the second."
+        "text": "<a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Retain</a> for the first category, <a href=\"#\" data-card-link=\"The 6 R's of migration strategy\">Retire</a> for the second."
       }
     ],
     "correctKey": "B",
@@ -3046,19 +3046,19 @@
     "options": [
       {
         "key": "A",
-        "text": "A single large AWS Lambda function containing all the sequential steps and conditional logic in one script."
+        "text": "A single large <a href=\"#\" data-card-link=\"AWS Lambda\">AWS Lambda</a> function containing all the sequential steps and conditional logic in one script."
       },
       {
         "key": "B",
-        "text": "AWS Step Functions orchestrating individual AWS Lambda functions for each step, using its built-in support for sequential steps, conditional branching, and a wait-for-callback pattern for the manual approval step."
+        "text": "<a href=\"#\" data-card-link=\"AWS Step Functions\">AWS Step Functions</a> orchestrating individual <a href=\"#\" data-card-link=\"AWS Lambda\">AWS Lambda</a> functions for each step, using its built-in support for sequential steps, conditional branching, and a wait-for-callback pattern for the manual approval step."
       },
       {
         "key": "C",
-        "text": "Amazon EC2 instances running a cron-scheduled shell script that calls each step in sequence."
+        "text": "<a href=\"#\" data-card-link=\"Amazon EC2\">Amazon EC2</a> instances running a cron-scheduled shell script that calls each step in sequence."
       },
       {
         "key": "D",
-        "text": "Amazon SQS queues chained together, with each queue's consumer triggering the next queue in the chain."
+        "text": "<a href=\"#\" data-card-link=\"Amazon SQS\">Amazon SQS</a> queues chained together, with each queue's consumer triggering the next queue in the chain."
       }
     ],
     "correctKey": "B",
@@ -3078,19 +3078,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS CloudFormation, writing a custom template for SAP infrastructure from scratch based on general EC2 best practices."
+        "text": "<a href=\"#\" data-card-link=\"AWS CloudFormation\">AWS CloudFormation</a>, writing a custom template for SAP infrastructure from scratch based on general EC2 best practices."
       },
       {
         "key": "B",
-        "text": "AWS Launch Wizard, which provides a guided workflow specifically for sizing and deploying SAP workloads on AWS according to SAP's own best practices."
+        "text": "<a href=\"#\" data-card-link=\"AWS Launch Wizard\">AWS Launch Wizard</a>, which provides a guided workflow specifically for sizing and deploying SAP workloads on AWS according to SAP's own best practices."
       },
       {
         "key": "C",
-        "text": "AWS Elastic Beanstalk, deploying SAP as a standard web application environment."
+        "text": "<a href=\"#\" data-card-link=\"AWS Elastic Beanstalk\">AWS Elastic Beanstalk</a>, deploying SAP as a standard web application environment."
       },
       {
         "key": "D",
-        "text": "AWS Migration Evaluator, since it estimates the AWS costs of any migrated workload including SAP."
+        "text": "<a href=\"#\" data-card-link=\"AWS Migration Evaluator\">AWS Migration Evaluator</a>, since it estimates the AWS costs of any migrated workload including SAP."
       }
     ],
     "correctKey": "B",
@@ -3106,23 +3106,23 @@
   {
     "id": "on-prem-ad-migration-aws-managed-microsoft-ad",
     "domain": "Migration Strategy",
-    "scenario": "A company is migrating a large number of Windows-based applications and file servers to AWS, all of which currently authenticate against an on-premises Active Directory domain, and wants a fully managed Microsoft Active Directory running natively in AWS that can either establish a trust relationship with the existing on-premises AD or be used as the primary directory going forward, without building, patching, or managing domain controllers themselves. What should they use?",
+    "scenario": "A company is migrating a large number of Windows-based applications and file servers to AWS, all of which currently authenticate against an on-premises <a href=\"#\" data-card-link=\"AWS Directory Service\">Active Directory</a> domain, and wants a fully managed Microsoft Active Directory running natively in AWS that can either establish a trust relationship with the existing on-premises AD or be used as the primary directory going forward, without building, patching, or managing domain controllers themselves. What should they use?",
     "options": [
       {
         "key": "A",
-        "text": "AD Connector, which proxies authentication requests to the existing on-premises AD without creating a new directory in AWS."
+        "text": "<a href=\"#\" data-card-link=\"AWS Directory Service\">AD Connector</a>, which proxies authentication requests to the existing on-premises AD without creating a new directory in AWS."
       },
       {
         "key": "B",
-        "text": "AWS Directory Service for Microsoft Active Directory, a fully managed AD running natively in AWS, capable of a trust relationship with the on-premises domain or standing alone."
+        "text": "<a href=\"#\" data-card-link=\"AWS Directory Service\">AWS Directory Service for Microsoft Active Directory</a>, a fully managed AD running natively in AWS, capable of a trust relationship with the on-premises domain or standing alone."
       },
       {
         "key": "C",
-        "text": "Amazon Cognito user pools, since they can serve as a directory for Windows-based application authentication."
+        "text": "Amazon <a href=\"#\" data-card-link=\"Cognito User Pools vs. Identity Pools — what's the difference?\">Cognito user pools</a>, since they can serve as a directory for Windows-based application authentication."
       },
       {
         "key": "D",
-        "text": "IAM Identity Center as a full replacement for Active Directory entirely."
+        "text": "<a href=\"#\" data-card-link=\"AWS IAM Identity Center\">IAM Identity Center</a> as a full replacement for <a href=\"#\" data-card-link=\"AWS Directory Service\">Active Directory</a> entirely."
       }
     ],
     "correctKey": "B",
@@ -3142,19 +3142,19 @@
     "options": [
       {
         "key": "A",
-        "text": "AWS Application Migration Service (MGN) for the committed cutover, AWS Elastic Disaster Recovery (DRS) for the indefinite standby posture."
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a> for the committed cutover, <a href=\"#\" data-card-link=\"AWS Elastic Disaster Recovery (DRS)\">AWS Elastic Disaster Recovery (DRS)</a> for the indefinite standby posture."
       },
       {
         "key": "B",
-        "text": "AWS Elastic Disaster Recovery (DRS) for the committed cutover, AWS Application Migration Service (MGN) for the indefinite standby posture."
+        "text": "<a href=\"#\" data-card-link=\"AWS Elastic Disaster Recovery (DRS)\">AWS Elastic Disaster Recovery (DRS)</a> for the committed cutover, <a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a> for the indefinite standby posture."
       },
       {
         "key": "C",
-        "text": "AWS Application Migration Service (MGN) for both scenarios, since it's the newer, recommended service for all use cases."
+        "text": "<a href=\"#\" data-card-link=\"AWS Application Migration Service (MGN)\">AWS Application Migration Service (MGN)</a> for both scenarios, since it's the newer, recommended service for all use cases."
       },
       {
         "key": "D",
-        "text": "AWS Database Migration Service (DMS) for both scenarios, since both involve replicating server state continuously."
+        "text": "<a href=\"#\" data-card-link=\"AWS DMS\">AWS Database Migration Service (DMS)</a> for both scenarios, since both involve replicating server state continuously."
       }
     ],
     "correctKey": "A",
@@ -3174,19 +3174,19 @@
     "options": [
       {
         "key": "A",
-        "text": "Migrate to Amazon RDS for Oracle, using the License Included model."
+        "text": "Migrate to <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for Oracle</a>, using the License Included model."
       },
       {
         "key": "B",
-        "text": "Migrate to Amazon RDS for Oracle, using the Bring-Your-Own-License model."
+        "text": "Migrate to <a href=\"#\" data-card-link=\"Amazon RDS\">Amazon RDS for Oracle</a>, using the Bring-Your-Own-License model."
       },
       {
         "key": "C",
-        "text": "Migrate to Amazon EC2, self-managing the Oracle RAC database directly, using existing licenses under Bring-Your-Own-License."
+        "text": "Migrate to <a href=\"#\" data-card-link=\"Amazon EC2\">Amazon EC2</a>, self-managing the Oracle RAC database directly, using existing licenses under Bring-Your-Own-License."
       },
       {
         "key": "D",
-        "text": "Migrate to Amazon Aurora, converting the Oracle database to a PostgreSQL-compatible engine."
+        "text": "Migrate to <a href=\"#\" data-card-link=\"Amazon Aurora\">Amazon Aurora</a>, converting the Oracle database to a PostgreSQL-compatible engine."
       }
     ],
     "correctKey": "C",
