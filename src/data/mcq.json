@@ -1680,7 +1680,12 @@
           "A NAT Gateway would route traffic out to S3's public endpoint over the internet path and incurs its own hourly plus per-GB data-processing charges — it fails both the cost and off-internet requirements."
         ],
         "B": [
-          "Interface endpoints keep traffic private but are ENI-based and incur hourly plus per-GB charges — Gateway endpoints are the free option specifically for S3 and DynamoDB."
+          "Interface endpoints keep traffic private but are ",
+          {
+            "term": "ENI",
+            "front": "Elastic Network Interface (ENI)"
+          },
+          "-based and incur hourly plus per-GB charges — Gateway endpoints are the free option specifically for S3 and DynamoDB."
         ],
         "D": [
           "PrivateLink is the general mechanism behind interface endpoints to partner/custom services — unnecessary and not free, when a Gateway endpoint already solves this exact S3 case at no cost."
